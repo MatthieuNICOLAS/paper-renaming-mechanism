@@ -1,0 +1,143 @@
+\documentclass{article}
+
+\usepackage[T1]{fontenc}
+\usepackage{ucs}
+\usepackage[utf8]{inputenc}
+
+\usepackage{acronym} % \ac[p], \acl[p], \acs[p], \acf[p]
+\usepackage{authblk} % \affil
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{color}
+\AtBeginDocument{
+\definecolor{pdfurlcolor}{rgb}{0,0,0}
+\definecolor{pdfcitecolor}{rgb}{0,0,0}
+\definecolor{pdflinkcolor}{rgb}{0,0,0}
+\definecolor{light}{gray}{.85}
+\definecolor{vlight}{gray}{.95}
+\definecolor{darkgreen}{rgb}{0.0, 0.2, 0.13}
+}
+\usepackage{hyperref}
+
+\newcommand{\email}[1]{\href{mailto:#1}{#1}}
+
+\usepackage[draft,inline,nomargin,index]{fixme}
+\fxsetup{theme=colorsig,mode=multiuser,inlineface=\itshape,envface=\itshape}
+\FXRegisterAuthor{go}{ago}{Gerald}
+\FXRegisterAuthor{mn}{amn}{Matthieu}
+
+% Acronyms
+% --------
+\acrodef{CRDT}[CRDT]{Conflict-free Replicated Data Type}
+\acrodefplural{CRDT}[CRDTs]{Conflict-free Replicated Data Types}
+
+% Meta-Data
+% ---------
+
+\hypersetup{pdftitle={In progress},
+    pdfsubject={},
+    pdfkeywords={Data replication, CRDT},
+    pdfauthor={M. Nicolas, O. Perrin, G. Oster}}
+
+%\pagestyle{empty}
+
+\begin{document}
+
+\title{Improving Replicated Sequences Performances}
+\author{Matthieu Nicolas}
+\author{Gérald Oster}
+\author{Olivier Perrin}
+\affil{Université de Lorraine, CNRS, Inria, LORIA, F-54500, France}
+\date{}
+
+\maketitle
+
+\section{Introduction}
+
+\section{Replicated Sequences}
+
+\subsection{Sequence}
+\subsection{CRDTs}
+\subsection{LogootSplit}
+\subsection{Limits}
+
+\mnnote{Besoin d'une section (ou autre) entre les limites de LogootSplit et le renommage pour justement introduire l'approche choisie (renommage) et les raisons (diminution de la taille des identifiants, aggrégation des blocs existants)}
+
+\section{Renaming in a (de)centralized setting}
+
+\subsection{System Model}
+\subsection{Intuition}
+\subsection{Renaming locally}
+\subsection{Dealing with concurrent operations}
+\subsection{Applying a remotely generated renaming operation}
+\subsection{Garbage collection}
+\subsection{Limits}
+
+\section{Renaming in a fully distributed setting}
+
+\subsection{System Model}
+\subsection{Intuition}
+\subsection{Strategy to determine leading epoch in case of concurrency}
+\subsection{Transitioning from a losing epoch to the leading one}
+\subsection{Garbage collection}
+
+\section{Evaluation}
+
+\section{Discussion}
+
+\subsection{Offloading on disk unused renaming rules}
+
+\begin{itemize}
+    \item As stated previously, nodes have to keep renaming rules as long as another nodes may issue operations which would require to be transformed to be applied
+    \item Thus nodes need to keep track of the progress of others to determine if such operations can still be issued or if it is safe to garbage collect the renaming rules
+    \item In a fully distributed setting, this requirement is difficult to reach as a node may join the collaboration, perform few operations and then disconnect
+    \item From the point of view of other nodes, they are not able to determine if this node disconnected temporarily or if it left definitely the collaboration
+    \item However, as the disconnected node stopped progressing, it holds back the whole system and keeps the current active nodes from garbage collecting old renaming rules
+    \item To limit the impact of stale nodes on active ones, we propose that nodes offload unused renaming rules by storing them on disk
+\end{itemize}
+
+\mnnote{Présenter une méthode pour déterminer les règles de renommage non-utilisées (conserver uniquement les règles utilisées pour traiter les $x$ dernières opérations ?)}
+
+\subsection{Alternative strategy to determine leading epoch}
+\subsection{Postponing transition between epochs in case of instability}
+
+\begin{itemize}
+    \item May reach a situation in which several nodes keep generating concurrent renaming operations on different epoch branches
+    \item In such case, switching repeatedly between these concurrent branches may prove wasteful \mnnote{"costly" plutôt?}
+    \item However, as long as nodes possess the required renaming rules, they are able to rewrite operations from the other side and to integrate them into their copy, even if they are not on the latest epoch of their branch
+    \begin{itemize}
+        \item At the cost of an overhead per operation
+    \end{itemize}
+    \item Thus not moving to the new current epoch does not impede the liveness of the system
+    \item Nodes can wait until one branch arise as the leading one then move to this epoch
+    \item To speed up the emergence of such a branch, communications can be increased between nodes in such case to ease synchronisation
+\end{itemize}
+
+\subsection{Compressing the renaming operation}
+
+\begin{itemize}
+    \item Propagating the renaming operation consists in broadcasting the list of blocks on which the renaming was performed, so that other nodes are able to compute the same rewriting rules
+    \item This could prove costly, as the state before renaming can be composed of blocks, each using long identifiers
+    \item We propose an approach to compress this operation to reduce its bandwidth consumption at the cost of additional computations to process it
+    \item Despite the variable length of identifiers, the parts required to identify an identifier uniquely are fixed
+    \begin{itemize}
+        \item We only need the $siteId$ and the $seq$ of the last tuple of the identifier to do so
+    \end{itemize}
+    \item Instead of broadcasting the list of whole identifiers, the node which performs the renaming can just broadcast the list of tuples $<siteId, seq>$
+    \item On reception of a compressed renaming operation, a node needs first to regenerate the list of renamed blocks to be able to apply it
+    \item To achieve so, it can browse its current state looking for identifiers with corresponding tuples $<siteId, seq>$
+    \item If some identifiers are missing from the state, it means that they were deleted concurrently
+    \item The node can thus browse the concurrent remove operations to the renaming one to find the missing blocks
+    \item Once all identifiers has been retrieved and the list of blocks computed, the renaming operation can be processed normally
+\end{itemize}
+
+\subsection{Operational Transformation}
+
+\mnnote{Ajouter une section sur OT pour expliquer que gérer les opérations concurrentes aux renommages consiste en finalité à transformer ces opérations, mais qu'on a décidé de ne pas présenter l'approche comme étant de l'OT dans ce papier pour des raisons de simplicité ?}
+
+\section{Conclusion}
+
+\bibliographystyle{abbrv}
+\bibliography{ref}
+
+\end{document}
