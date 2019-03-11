@@ -28,8 +28,13 @@
 
 % Acronyms
 % --------
+\acrodef{ADT}[ADT]{Abstract Data Type}
+\acrodefplural{ADT}[ADTs]{Abstract Data Types}
+
 \acrodef{CRDT}[CRDT]{Conflict-free Replicated Data Type}
 \acrodefplural{CRDT}[CRDTs]{Conflict-free Replicated Data Types}
+
+\acrodef{SEC}[SEC]{Strong Eventual Consistency}
 
 % Meta-Data
 % ---------
@@ -57,8 +62,59 @@
 \section{Replicated Sequences}
 
 \subsection{Sequence}
-\subsection{CRDTs}
-\subsection{LogootSplit}
+
+\begin{itemize}
+    \item \ac{ADT} which allows to represent a list of values
+    \item Provide two operations to update the sequence, $insert$ and $remove$
+    \item $insert(S, index, elt) = S'$ inserts the value $elt$ at the index $index$ into the sequence $S$ and returns the updated sequence $S'$
+    \item $remove(S, index) = S'$ removes the value at the position $index$ in the sequence $S$ and returns the updated sequence $S'$
+\end{itemize}
+
+\subsection{\acp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
+
+\begin{itemize}
+    \item Optimistically replicated data structure
+    \item Updates performed without coordination between nodes
+    \item Ensure \ac{SEC} \cite{shapiro_2011_crdt}
+\end{itemize}
+
+\subsection{Logoot \cite{WeissICDCS09}}
+
+\begin{itemize}
+    \item Element-wise Sequence \ac{CRDT}
+    \item Key insight is to replace changing and unreliable $indexes$ with universal and immutable $positions$
+    \begin{itemize}
+        \item $indexes$ are adapted for sequential executions
+        \item They are closely tied to the current state of the sequence, as updating the later provoke a shift to them
+        \item However, they can not be used in a distributed setting, in which the order of the execution of the updates can be different from one node to another, to embody the user's intention
+        \item Conversely, Logoot's $positions$ are designed to be independent of the state
+        \item This allows the definition of commutative operations, providing a $Sequence$ suited for distributed settings
+    \end{itemize}
+    \item When inserting an element into the sequence, a fitting $position$ is computed by the node and associated to the element
+    \item These $positions$ perform several roles
+    \begin{itemize}
+        \item They identify uniquely an element
+        \item They order the elements relatively to each other
+    \end{itemize}
+    \item To be able to perform these roles, $positions$ need to comply with several constraints
+    \begin{itemize}
+        \item Be globally unique: several nodes should not able to compute the same $position$ concurrently
+        \item Be temporarily unique: a node should not be able to associate the same $position$ to different elements during the lifetime of the sequence
+        \item Be totally ordered: a order relation must exist over $positions$ so a node can order two elements given their respective $position$
+        \item Belong to a dense set: a node should always be able to generate a new $position$ between two others
+    \end{itemize}
+    \item To comply with these constraints, the $positions$ are of the following form:
+
+    \mnnote{TODO: Décrire la structure des positions Logoot et comment les différents composants permettent de respecter les différentes contraintes}
+\end{itemize}
+
+\subsection{LogootSplit \cite{AndreCollaborateCom2013}}
+
+\begin{itemize}
+    \item State of the art of Sequence \acp{CRDT}
+    \item Develop further the ideas of Logoot by aggregating contiguous elements from a node into blocks of adaptable size \mnnote{TODO: Expliquer la notion de $contiguous$ et trouver un meilleur terme?}
+\end{itemize}
+
 \subsection{Limits}
 
 \mnnote{Besoin d'une section (ou autre) entre les limites de LogootSplit et le renommage pour justement introduire l'approche choisie (renommage) et les raisons (diminution de la taille des identifiants, aggrégation des blocs existants)}
