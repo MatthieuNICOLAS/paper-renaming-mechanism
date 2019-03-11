@@ -117,18 +117,18 @@
 
 \begin{itemize}
     \item Propagating the renaming operation consists in broadcasting the list of blocks on which the renaming was performed, so that other nodes are able to compute the same rewriting rules
-    \item This could prove costly, as the state before renaming can be composed of blocks, each using long identifiers
+    \item This could prove costly, as the state before renaming can be composed of many blocks, each using long positions
     \item We propose an approach to compress this operation to reduce its bandwidth consumption at the cost of additional computations to process it
-    \item Despite the variable length of identifiers, the parts required to identify an identifier uniquely are fixed
+    \item Despite the variable length of positions, the parts required to identify an position uniquely are fixed
     \begin{itemize}
-        \item We only need the $siteId$ and the $seq$ of the last tuple of the identifier to do so
+        \item We only need the $siteId$ and the $seq$ of the last tuple of the position to do so
     \end{itemize}
-    \item Instead of broadcasting the list of whole identifiers, the node which performs the renaming can just broadcast the list of tuples $<siteId, seq>$
+    \item Instead of broadcasting the list of whole positions, the node which performs the renaming can just broadcast the list of tuples $<siteId, seq>$
     \item On reception of a compressed renaming operation, a node needs first to regenerate the list of renamed blocks to be able to apply it
-    \item To achieve so, it can browse its current state looking for identifiers with corresponding tuples $<siteId, seq>$
-    \item If some identifiers are missing from the state, it means that they were deleted concurrently
+    \item To achieve so, it can browse its current state looking for positions with corresponding tuples $<siteId, seq>$
+    \item If some positions are missing from the state, it means that they were deleted concurrently
     \item The node can thus browse the concurrent remove operations to the renaming one to find the missing blocks
-    \item Once all identifiers has been retrieved and the list of blocks computed, the renaming operation can be processed normally
+    \item Once all positions has been retrieved and the list of blocks computed, the renaming operation can be processed normally
 \end{itemize}
 
 \subsection{Operational Transformation}
