@@ -90,6 +90,9 @@
         \item Conversely, Logoot's $positions$ are designed to be independent of the state
         \item This allows the definition of commutative operations, providing a $Sequence$ suited for distributed settings
     \end{itemize}
+
+    \mnnote{TODO: Insérer un exemple de manipulation concurrente d'une séquence (ins/remove en parallèle), sans mécanisme de résolution de conflits, pour illustrer la divergence du résultat si on ne se base que sur des index}
+
     \item When inserting an element into the sequence, a fitting $position$ is computed by the node and associated to the element
     \item These $positions$ perform several roles
     \begin{itemize}
@@ -103,9 +106,32 @@
         \item Be totally ordered: a order relation must exist over $positions$ so a node can order two elements given their respective $position$
         \item Belong to a dense set: a node should always be able to generate a new $position$ between two others
     \end{itemize}
-    \item To comply with these constraints, the $positions$ are of the following form:
+    \item To comply with these constraints, the $positions$ are composed of one or several of the following tuples:
 
-    \mnnote{TODO: Décrire la structure des positions Logoot et comment les différents composants permettent de respecter les différentes contraintes}
+    \begin{center}
+        $<prio, id_{site}, seq_{site}>$
+    \end{center}
+
+    where:
+
+    \begin{itemize}
+        \item $prio$ allows to determine the location of this position relatively to others
+        \item $id_{site}$ refers to the node's identifier, assumed to be unique
+        \item $seq_{site}$ refers to the node's logical clock, which increases monotonically with local updates
+    \end{itemize}
+
+    \mnnote{TODO: Reprendre l'exemple précédent, mais en remplaçant les index par des positions Logoot, pour illustrer la convergence}
+
+    \item It is worth to notice that
+    \begin{itemize}
+        \item The couple $<id_{site}, seq_{site}>$ of the last tuple of the position ensures its uniqueness as
+        \begin{itemize}
+            \item No other node can generate a position using the same $id_{site}$ as it is unique
+            \item The node can not generate another position at a later time using the same $seq_{site}$ as it is increasing monotonically
+        \end{itemize}
+        \item Every part of the position can be used to define a total order based on the lexicographical order
+        \item The variable number of tuples composing a position ensures that a position can always be generated between 2 others
+    \end{itemize}
 \end{itemize}
 
 \subsection{LogootSplit \cite{AndreCollaborateCom2013}}
