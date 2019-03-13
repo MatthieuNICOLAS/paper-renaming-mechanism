@@ -1,11 +1,11 @@
 \documentclass{article}
 
 \usepackage[T1]{fontenc}
-\usepackage{ucs}
 \usepackage[utf8]{inputenc}
 
 \usepackage{acronym} % \ac[p], \acl[p], \acs[p], \acf[p]
 \usepackage{authblk} % \affil
+\usepackage[defernumbers=true, sorting=none]{biblatex}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{color}
@@ -45,6 +45,8 @@
     pdfauthor={M. Nicolas, O. Perrin, G. Oster}}
 
 %\pagestyle{empty}
+
+\addbibresource{ref.bib}
 
 \begin{document}
 
@@ -219,7 +221,6 @@
 
 \section{Conclusion}
 
-\bibliographystyle{abbrv}
-\bibliography{ref}
+\printbibliography
 
 \end{document}
