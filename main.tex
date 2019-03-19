@@ -108,7 +108,7 @@
         \item Be totally ordered: a order relation must exist over $positions$ so a node can order two elements given their respective $position$
         \item Belong to a dense set: a node should always be able to generate a new $position$ between two others
     \end{itemize}
-    \item To comply with these constraints, the $positions$ are composed of one or several of the following tuples:
+    \item To comply with these constraints, Logoot $positions$ are composed of one or several of the following tuples:
 
     \begin{center}
         $<priority, id_{site}, seq_{site}>$
@@ -141,9 +141,9 @@
 \begin{itemize}
     \item Block-wise Sequence \acp{CRDT}
     \item Goal is to improve further the performances of Logoot
-    \item Generating and associating a position to each element of the sequence is expensive
+    \item It is expensive to generate and associate a position to each element of the sequence
     \item \textcite{AndreCollaborateCom2013} proposes to aggregate dynamically elements into blocks
-    \item It allows to reduce the metadata per element as we only need to store a $position \ interval$ for a block independently of how many elements it contains
+    \item It allows to reduce the metadata per element as we only need to store a $position \ interval$ for a block, independently of how many elements it contains
     \item To do so, add a new component to positions tuples: the $offset$ \mnnote{Préciser que $offset$ doit appartenir à un ensemble énumérable, de façon à ce que l'on puisse déterminer son prédecesseur, successeur ou si une valeur est manquante ?}
     \item LogootSplit $positions$ are thus composed of one or several of the following tuples:
 
@@ -151,7 +151,7 @@
         $<priority, id_{site}, seq_{site}, offset>$
     \end{center}
 
-    \item Define positions as aggregable if all but the $offsets$ of their last tuple are identical and their respective $offsets$ are consecutive
+    \item Define positions as aggregable if all components but the $offsets$ of their last tuple are identical and if their respective $offsets$ are consecutive
     \item Define $position \ interval$ as the following couple:
 
     \begin{center}
@@ -171,15 +171,27 @@
         \item The uniqueness of a LogootSplit position is ensured by the triple $<id_{site}, seq_{site}, offset>$
         \item As such, an $offset$ can not be used twice for the same block
         \item It is then necessary to prevent such a case from happening when a node prepend or append a new element to an existing block
-        \item It can be achieved by disabling flags allowing to preprend/append when the first/last element of a block is removed
+        \item It can be achieved by keeping track of used $offset$ per block
+        \begin{itemize}
+            \item To be more precise, only need to keep track of the minimum and maximum $offsets$ ever used for this block
+        \end{itemize}
     \end{itemize}
 \end{itemize}
 
 \subsection{Limits}
 
-\mnnote{Besoin d'une section (ou autre) entre les limites de LogootSplit et le renommage pour justement introduire l'approche choisie (renommage) et les raisons (diminution de la taille des identifiants, aggrégation des blocs existants)}
+\begin{itemize}
+    \item As shown previously, LogootSplit positions' size is not bounded in order to comply with the dense set constraint
+    \item Positions will become longer as the collaboration progresses, downgrading the performances of the application \mnnote{NOTE: trouver un autre terme que "collaboration"?}
+    \begin{itemize}
+        \item Since nodes have to broadcast positions, store them but also compare them to determine their order
+    \end{itemize}
+    \item \mnnote{Ici j'aimerais aussi ajouter quelques mots pour expliquer que le nombre de blocs influe négativement sur les performances de l'application (augmente le temps de parcours de la liste, et donc le temps d'exécution d'une insertion ou d'une suppression; doit conserver un $position \ interval$ pour chaque bloc). Une séquence est donc optimale si elle composée d'un unique bloc. Mais en raison des contraintes définissant les positions aggrégeables (insertions à des index consécutifs par un même noeud, sans suppression intermédiaire) et de l'absence de mécanisme pour fusionner à posteriori les blocs existants, les séquences issues d'une collaboration sont généralement morcelées en de nombreux blocs.}
+\end{itemize}
 
-\section{Renaming in a (de)centralized setting}
+\mnnote{Besoin d'une section (ou autre) entre les limites de LogootSplit et le renommage pour justement introduire l'approche choisie (renommage) et les raisons (diminution de la taille des identifiants, aggrégation de l'ensemble des blocs existants)}
+
+\section{Renaming in a centralized setting}
 
 \subsection{System Model}
 \subsection{Intuition}
