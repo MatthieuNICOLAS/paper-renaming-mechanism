@@ -116,6 +116,7 @@
 
     where:
 
+    \mnnote{NOTE: on utilise actuellement des entiers pour représenter les éléments des tuples à l'heure actuelle mais pourrait utiliser n'importe quel type disposant d'une relation d'ordre, donc je ne sais pas quel type indiquer ici}
     \begin{itemize}
         \item $priority$ allows to determine the location of this position relatively to others
         \item $id_{site}$ refers to the node's identifier, assumed to be unique
@@ -189,9 +190,21 @@
     \item \mnnote{Ici j'aimerais aussi ajouter quelques mots pour expliquer que le nombre de blocs influe négativement sur les performances de l'application (augmente le temps de parcours de la liste, et donc le temps d'exécution d'une insertion ou d'une suppression; doit conserver un $position \ interval$ pour chaque bloc). Une séquence est donc optimale si elle composée d'un unique bloc. Mais en raison des contraintes définissant les positions aggrégeables (insertions à des index consécutifs par un même noeud, sans suppression intermédiaire) et de l'absence de mécanisme pour fusionner à posteriori les blocs existants, les séquences issues d'une collaboration sont généralement morcelées en de nombreux blocs.}
 \end{itemize}
 
-\mnnote{Besoin d'une section (ou autre) entre les limites de LogootSplit et le renommage pour justement introduire l'approche choisie (renommage) et les raisons (diminution de la taille des identifiants, aggrégation de l'ensemble des blocs existants)}
+\section{Overview}
 
-\section{Renaming in a centralized setting}
+\begin{itemize}
+    \item We build up on top of LogootSplit
+    \item To address its limitations, we introduce a renaming mechanism
+    \item The purpose of this mechanism is to reassign shorter positions to each element such as all of them can be aggregated into one unique block
+    \item This allows to reduce the metadata per element, the computation time required to apply next updates and also the bandwidth used to broadcast future updates
+    \item For simplicity purposes, will first present the renaming mechanism in the context of a centralised system, with only one node able to trigger the renaming mechanism
+    \begin{itemize}
+        \item Will describe the functioning of this initial version and discuss its limitations
+    \end{itemize}
+    \item Will then present a more elaborated version of the renaming mechanism, overcoming the limitations of the centralised version and allowing its use in a distributed setting
+\end{itemize}
+
+\section{Renaming in a centralised setting}
 
 \subsection{System Model}
 \subsection{Intuition}
