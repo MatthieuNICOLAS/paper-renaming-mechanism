@@ -242,6 +242,29 @@
 \subsubsection{Garbage collection}
 \subsubsection{Limits}
 
+\begin{itemize}
+    \item The system is vulnerable to failures, as only one particular node is able to trigger renamings
+    \begin{itemize}
+        \item A failure of this node would prevent the renaming mechanism from being triggered ever again
+        \item But other nodes would still be able to continue their collaboration in such scenario
+        \item The failure of the renaming mechanism does not impede the liveness of the system
+    \end{itemize}
+    \item To address this fault-tolerance issue, can set up a consensus-based system
+    \begin{itemize}
+        \item Require nodes to perform a consensus to trigger a renaming
+        \item But consensus algorithms are expensive and not suited for dynamic systems
+        \item Can adapt the idea introduced in \cite{letia:hal-01248270}
+        \item In this paper, authors propose to divide a distributed system into two tiers:
+        the \emph{Core}, a small set of controlled and stable nodes, and the \emph{Nebula}, an uncontrolled set of nodes
+        \begin{itemize}
+            \item Only nodes from the \emph{Core} would participate in the consensus leading to a renaming
+        \end{itemize}
+        \item Provide a trade-off between the cost of performing a renaming and the resilience of the system
+    \end{itemize}
+    \item But this approach is not suited for all kind of applications
+    \item In fully distributed systems, there is no central authority to provide a set of stable nodes acting as the \emph{Core}
+\end{itemize}
+
 \subsection{Renaming in a fully distributed setting}
 
 \subsubsection{System Model}
