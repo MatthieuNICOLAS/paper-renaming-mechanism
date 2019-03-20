@@ -190,7 +190,9 @@
     \item \mnnote{Ici j'aimerais aussi ajouter quelques mots pour expliquer que le nombre de blocs influe négativement sur les performances de l'application (augmente le temps de parcours de la liste, et donc le temps d'exécution d'une insertion ou d'une suppression; doit conserver un $position \ interval$ pour chaque bloc). Une séquence est donc optimale si elle composée d'un unique bloc. Mais en raison des contraintes définissant les positions aggrégeables (insertions à des index consécutifs par un même noeud, sans suppression intermédiaire) et de l'absence de mécanisme pour fusionner à posteriori les blocs existants, les séquences issues d'une collaboration sont généralement morcelées en de nombreux blocs.}
 \end{itemize}
 
-\section{Overview}
+\section{Approach}
+
+\subsection{Overview}
 
 \begin{itemize}
     \item We build up on top of LogootSplit
@@ -204,9 +206,9 @@
     \item Will then present a more elaborated version of the renaming mechanism, overcoming the limitations of the centralised version and allowing its use in a distributed setting
 \end{itemize}
 
-\section{Renaming in a centralised setting}
+\subsection{Renaming in a centralised setting}
 
-\subsection{System Model}
+\subsubsection{System Model}
 
 \mnnote{NOTE: Ça me paraît correct mais confusant de parler d'un système centralisé pour un système P2P où seulement une fonctionnalité (le renommage) n'est disponible que pour un noeud particulier. Voir pour mieux présenter cet aspect}
 
@@ -233,20 +235,20 @@
     \item This node only is able to trigger renamings
 \end{itemize}
 
-\subsection{Intuition}
-\subsection{Renaming locally}
-\subsection{Dealing with concurrent operations}
-\subsection{Applying a remotely generated renaming operation}
-\subsection{Garbage collection}
-\subsection{Limits}
+\subsubsection{Intuition}
+\subsubsection{Renaming locally}
+\subsubsection{Dealing with concurrent operations}
+\subsubsection{Applying a remotely generated renaming operation}
+\subsubsection{Garbage collection}
+\subsubsection{Limits}
 
-\section{Renaming in a fully distributed setting}
+\subsection{Renaming in a fully distributed setting}
 
-\subsection{System Model}
-\subsection{Intuition}
-\subsection{Strategy to determine leading epoch in case of concurrency}
-\subsection{Transitioning from a losing epoch to the leading one}
-\subsection{Garbage collection}
+\subsubsection{System Model}
+\subsubsection{Intuition}
+\subsubsection{Strategy to determine leading epoch in case of concurrency}
+\subsubsection{Transitioning from a losing epoch to the leading one}
+\subsubsection{Garbage collection}
 
 \section{Evaluation}
 
