@@ -207,6 +207,32 @@
 \section{Renaming in a centralised setting}
 
 \subsection{System Model}
+
+\mnnote{NOTE: Ça me paraît correct mais confusant de parler d'un système centralisé pour un système P2P où seulement une fonctionnalité (le renommage) n'est disponible que pour un noeud particulier. Voir pour mieux présenter cet aspect}
+
+\begin{itemize}
+    \item Peer-to-peer network
+    \begin{itemize}
+        \item Nodes join and leave dynamically
+    \end{itemize}
+    \item Nodes build and maintain a sequence collaboratively using LogootSplit
+    \begin{itemize}
+        \item Each node owns a copy of the sequence and can edit it without any kind of coordination with others
+    \end{itemize}
+    \item The network is unreliable
+    \begin{itemize}
+        \item Messages can be lost, re-ordered and delivered multiple times
+    \end{itemize}
+    \item To overcome the faults of the network, a message-passing layer is used to deliver messages to the application in the correct order
+    \begin{itemize}
+        \item Removal of an element happens only after its insertion
+    \end{itemize}
+    \item An anti-entropy mechanism is used by nodes to synchronise in a pairwise manner to detect and re-exchange lost messages
+
+    \item One node is arbitrarily designed as the leader
+    \item This node only is able to trigger renamings
+\end{itemize}
+
 \subsection{Intuition}
 \subsection{Renaming locally}
 \subsection{Dealing with concurrent operations}
@@ -274,7 +300,7 @@
 
 \subsection{Operational Transformation}
 
-\mnnote{Ajouter une section sur OT pour expliquer que gérer les opérations concurrentes aux renommages consiste en finalité à transformer ces opérations, mais qu'on a décidé de ne pas présenter l'approche comme étant de l'OT dans ce papier pour des raisons de simplicité ?}
+\mnnote{Ajouter une section sur OT pour expliquer que gérer les opérations concurrentes aux renommages consiste en finalité à transformer ces opérations, mais qu'on a décidé de ne pas présenter et formaliser l'approche comme étant de l'OT dans ce papier pour des raisons de simplicité ?}
 
 \section{Conclusion}
 
