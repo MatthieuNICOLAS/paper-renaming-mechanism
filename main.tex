@@ -262,6 +262,23 @@
 \subsubsection{Dealing with concurrent operations}
 \subsubsection{Applying a remotely generated renaming operation}
 \subsubsection{Garbage collection}
+
+\begin{itemize}
+    \item As stated previously, the renaming generates additional metadata: the epochs and the rewriting rules used to transform concurrent operations against the renaming
+    \item However, we do not need to keep this additional metadata forever
+    \item Since they are used to handle concurrent operations to the renaming, they are not required anymore once no additional concurrent operation can be issued by a node
+    \item i.e. we can safely garbage collect rewriting rules once the corresponding renaming operation is causally stable \cite{10.1007/978-3-662-43352-2_11}
+    \item Nodes need thus to keep track of the progress of others to detect when this condition is met
+    \item This can be done in a coordination-free manner by exploiting the epochs attached to operations:
+    \begin{itemize}
+        \item Each node stores a vector of epochs, with one entry for each node
+        \item Upon the reception of an operation, the node updates the entry of the sender with the epoch of the operation
+        \item As nodes collaborates, epochs in the vector will progress
+        \item By retrieving the minimum epoch from the vector, we can identify which epoch has been reached by all nodes
+        \item We can then safely garbage collect all previous epochs and corresponding rewriting rules
+    \end{itemize}
+\end{itemize}
+
 \subsubsection{Limits}
 
 \begin{itemize}
