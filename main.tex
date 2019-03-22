@@ -199,7 +199,7 @@
     \item To address its limitations, we introduce a renaming mechanism
     \item The purpose of this mechanism is to reassign shorter positions to each element such as all of them can be aggregated into one unique block
     \item This allows to reduce the metadata per element, the computation time required to apply next updates and also the bandwidth used to broadcast future updates
-    \item \mnnote{TODO: Expliquer que toutefois le mécanisme de renommage a un coût et qu'on cherche à le minimiser. Mais j'ai du mal à voir comment introduire la notion de cet overhead sans rentrer dans les détails qui en sont la source (règles de réécriture, arborescence des epochs, transformation des opérations concurrentes)}
+    \item \mnnote{TODO: Expliquer que toutefois le mécanisme de renommage ajoute un coût et qu'on cherche à le minimiser. Mais j'ai du mal à voir comment introduire la notion de cet overhead sans rentrer dans les détails qui en sont la source (règles de réécriture, arborescence des epochs, transformation des opérations concurrentes), que je préférerais introduire un par un dans la suite du papier}
     \item For simplicity purposes, will first present the renaming mechanism in the context of a centralised system, with only one node able to trigger the renaming mechanism
     \begin{itemize}
         \item Will describe the functioning of this initial version and discuss its limitations
@@ -230,7 +230,7 @@
     \begin{itemize}
         \item Removal of an element happens only after its insertion
     \end{itemize}
-    \item An anti-entropy mechanism is used by nodes to synchronise in a pairwise manner to detect and re-exchange lost messages
+    \item An anti-entropy mechanism is used by nodes to synchronise in a pairwise manner, by detecting and re-exchanging lost messages
 
     \item One node is arbitrarily designed as the leader
     \item This node only is able to trigger renamings
@@ -243,9 +243,10 @@
     \begin{itemize}
         \item i.e. reassign a new, shorter position to each element such as all elements can be aggregated into one block as well
     \end{itemize}
+    \item Add the new operation $rename$
     \item Have to be able to deal with concurrent operations
     \begin{itemize}
-        \item As only the leader can perform renaming, can not have a concurrent renaming operation...
+        \item As only the leader can perform renaming, cannot exist a concurrent $rename$ operation...
         \item ... but can still receive concurrent insertions and removals
         \item Applying them as such would lead to inconsistencies as the renaming may interfere
         \begin{itemize}
@@ -254,11 +255,48 @@
         \end{itemize}
         \item It is required to transform these operations against the renaming to ensure consistency
     \end{itemize}
-    \item Have to broadcast the renaming operation so other nodes can also update their own state
+    \item Have to broadcast the $rename$ operation so other nodes can also update their own state
     \item \mnnote{TODO: Revenir sur la notion d'overhead du mécanisme de renommage. Expliquer qu'il génère des métadonnées supplémentaires qu'on GC à un moment donné pour des raisons d'efficacité}
 \end{itemize}
 
 \subsubsection{Renaming locally}
+
+\begin{itemize}
+    \item Consist in generating an equivalent Sequence, with the same content but composed of only one block
+    \item Need to generate a $position \ interval$ for this block
+    \item Have to pick a position as the beginning of the interval
+    \item This choice is arbitrary
+    \item In our case, generate the following position $pos$:
+
+    \begin{center}
+        $pos = <priority, id_{site}, seq_{site}, 0>$
+    \end{center}
+
+    where:
+
+    \begin{itemize}
+        \item $priority$ is the same value as the $priority$ of the first tuple of the first element of the sequence. We explain this choice in the next section.
+        \item $id_{site}$ is the $id_{site}$ of the node performing the $rename$ operation
+        \item $seq_{site}$ is the current $seq_{site}$ of the node performing the $rename$ operation
+    \end{itemize}
+
+    \item Using the position $pos$, we are able to generate the following position interval $posInterval$:
+
+    \begin{center}
+        $posInterval = <pos, length - 1>$
+    \end{center}
+
+    where:
+
+    \begin{itemize}
+        \item $length$ is the length of the sequence
+    \end{itemize}
+
+    \item Using $posInterval$ and the content of the sequence, we are able to generate an equivalent sequence $S'$ but optimized to replace the current state
+\end{itemize}
+
+\mnnote{TODO: ajouter l'algorithme correspondant en pseudo-code}
+
 \subsubsection{Dealing with concurrent operations}
 \subsubsection{Applying a remotely generated renaming operation}
 \subsubsection{Garbage collection}
@@ -345,6 +383,8 @@
 \end{itemize}
 
 \subsection{Compressing the renaming operation}
+
+\mnnote{TODO: Retravailler pour y ajouter la notion d'offset. Par contre, faire remarquer qu'on a pas besoin de l'offset pour identifier de manière unique "la base" d'une position (toute la position sauf l'offset)}
 
 \begin{itemize}
     \item Propagating the renaming operation consists in broadcasting the list of blocks on which the renaming was performed, so that other nodes are able to compute the same rewriting rules
