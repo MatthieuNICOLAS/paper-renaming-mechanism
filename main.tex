@@ -69,7 +69,7 @@
     \item \ac{ADT} which allows to represent a list of values
     \item Provide two operations to update the sequence, $insert$ and $remove$
     \item $insert(S, index, elt) = S'$ inserts the value $elt$ at the index $index$ into the sequence $S$ and returns the updated sequence $S'$
-    \item $remove(S, index) = S'$ removes the value at the position $index$ in the sequence $S$ and returns the updated sequence $S'$
+    \item $remove(S, index) = S'$ removes from the sequence $s$ the value at the index $index$ and returns the updated sequence $S'$
 \end{itemize}
 
 \subsection{\acp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
@@ -135,6 +135,16 @@
         \item Every part of positions can be used to define a total order based on the lexicographical order
         \item To ensure that positions form a dense set, we have to reserve exclusively the usage of the minimal value of $priority$ to a specific tuple, $minTuple$. By doing this we have, for every other tuple $t$, $minTuple < t$. $minTuple$ is then used only as an intermediary tuple, the default value when a node has to generate a tuple less than another one, but is not able to. Thus, given two positions $p1$ and $p2$ such as $p1 < p2$, any node is always able to generate a new position $p3$ such as $p1 < p3 < p2$ by reusing the tuples of $p1$, appending $minTuple$ as many times as required and finally adding its own new tuple $t$.
     \end{itemize}
+    \item Updates the definition of the operations $insert$ and $remove$ to take into account these changes
+    \begin{itemize}
+        \item $insert(S, pos, elt) = S'$ inserts the value $elt$ at the position $pos$ into the sequence $S$ and returns the updated sequence $S'$
+        \item $remove(S, pos) = S'$ removes from the sequence $S$ the value at the position $pos$ and returns the updated sequence $S'$
+    \end{itemize}
+    \item Provides some functions to nodes so they can obtain $positions$ from $indexes$
+    \begin{itemize}
+        \item $generatePos(S, index) = pos$ generates a new position $pos$ corresponding to the index $index$ of the current sequence $S$
+        \item $getPos(S, index) = pos$ retrieves the position $pos$ of the element at the index $index$ in the current sequence $S$
+    \end{itemize}
 \end{itemize}
 
 \subsection{LogootSplit \cite{AndreCollaborateCom2013}}
@@ -176,6 +186,16 @@
         \begin{itemize}
             \item To be more precise, only need to keep track of the minimum and maximum $offsets$ ever used for this block
         \end{itemize}
+    \end{itemize}
+
+    \item Updates the definition of the operations $insert$ and $remove$ to make them block-wise
+    \begin{itemize}
+        \item $insert(S, pos, elts) = S'$ inserts into the sequence $S$ the values $elts$ from the position $pos$. Returns the updated sequence $S'$
+        \item $remove(S, posIntervals) = S'$ removes from the sequence $S$ the values with their position contained in one of the interval of $posIntervals$ and returns the updated sequence $S'$
+    \end{itemize}
+    \item Also introduce the following function:
+    \begin{itemize}
+        \item $getPosIntervals(S, index, length) = posIntervals$ retrieves the list of $position intervals$  at the index $index$ in the current sequence $S$
     \end{itemize}
 \end{itemize}
 
@@ -292,7 +312,7 @@
         \item $length$ is the length of the sequence
     \end{itemize}
 
-    \item Using $posInterval$ and the content of the sequence, we are able to generate an equivalent sequence $S'$ but optimized to replace the current state
+    \item Using $posInterval$ and the content of the sequence, we are able to generate an equivalent sequence $S'$ but optimised to replace the current state
 \end{itemize}
 
 \mnnote{TODO: ajouter l'algorithme correspondant en pseudo-code}
