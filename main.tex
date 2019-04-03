@@ -195,7 +195,7 @@
     \end{itemize}
     \item Also introduce the following function:
     \begin{itemize}
-        \item $getPosIntervals(S, index, length) = posIntervals$ retrieves the list of $position intervals$  at the index $index$ in the current sequence $S$
+        \item $getPosIntervals(S, index, length) = posIntervals$ retrieves the list of $position \ intervals$  at the index $index$ in the current sequence $S$
     \end{itemize}
 \end{itemize}
 
@@ -256,69 +256,24 @@
     \item This node only is able to trigger renamings
 \end{itemize}
 
-\subsubsection{Intuition}
+\subsubsection{Specification}
 
 \begin{itemize}
-    \item Want to rename all positions from the current state
+    \item Introduce a new operation $rename$
+    \item This operation allows nodes to map each $position$ of their current sequence to a new one
+    \item Must be defined for all $positions$ of the current sequence of the node triggering the renaming...
+    \item ... but also for all $positions$ which can be added concurrently by other nodes
+    \item To ensure the correctness of the resulting sequences, this operation must comply with several properties
     \begin{itemize}
-        \item i.e. reassign a new, shorter position to each element such as all elements can be aggregated into one block as well
+        \item $position \ uniqueness \ preservation$ : as $positions$ must be unique, a $rename$ operation should not map several $positions$ to the same resulting one
+        \item $order \ preservation$ : as $positions$ ensures the order of their respective element, a $rename$ operation should not shuffle this order
     \end{itemize}
-    \item Add the new operation $rename$
-    \item Have to be able to deal with concurrent operations
+    \item To ensure the eventual consistency of the system, the $rename$ operation must also be commutative with the other operations $insert$ and $delete$ as nodes may receive and apply them in different orders
     \begin{itemize}
-        \item As only the leader can perform renaming, cannot exist a concurrent $rename$ operation...
-        \item ... but can still receive concurrent insertions and removals
-        \item Applying them as such would lead to inconsistencies as the renaming may interfere
-        \begin{itemize}
-            \item e.g. removing a position which has been since renamed
-            \item \mnnote{TODO: Ajouter le schéma correspondant?}
-        \end{itemize}
-        \item It is required to transform these operations against the renaming to ensure consistency
+        \item As no concurrent $rename$ operation can be issued, since only node is able to trigger the renaming mechanism, there is no need to design the $rename$ operation as commutative with itself
     \end{itemize}
-    \item Have to broadcast the $rename$ operation so other nodes can also update their own state
-    \item \mnnote{TODO: Revenir sur la notion d'overhead du mécanisme de renommage. Expliquer qu'il génère des métadonnées supplémentaires qu'on GC à un moment donné pour des raisons d'efficacité}
 \end{itemize}
 
-\subsubsection{Renaming locally}
-
-\begin{itemize}
-    \item Consist in generating an equivalent Sequence, with the same content but composed of only one block
-    \item Need to generate a $position \ interval$ for this block
-    \item Have to pick a position as the beginning of the interval
-    \item This choice is arbitrary
-    \item In our case, generate the following position $pos$:
-
-    \begin{center}
-        $pos = <priority, id_{site}, seq_{site}, 0>$
-    \end{center}
-
-    where:
-
-    \begin{itemize}
-        \item $priority$ is the same value as the $priority$ of the first tuple of the first element of the sequence. We explain this choice in the next section.
-        \item $id_{site}$ is the $id_{site}$ of the node performing the $rename$ operation
-        \item $seq_{site}$ is the current $seq_{site}$ of the node performing the $rename$ operation
-    \end{itemize}
-
-    \item Using the position $pos$, we are able to generate the following position interval $posInterval$:
-
-    \begin{center}
-        $posInterval = <pos, length - 1>$
-    \end{center}
-
-    where:
-
-    \begin{itemize}
-        \item $length$ is the length of the sequence
-    \end{itemize}
-
-    \item Using $posInterval$ and the content of the sequence, we are able to generate an equivalent sequence $S'$ but optimised to replace the current state
-\end{itemize}
-
-\mnnote{TODO: ajouter l'algorithme correspondant en pseudo-code}
-
-\subsubsection{Dealing with concurrent operations}
-\subsubsection{Applying a remotely generated renaming operation}
 \subsubsection{Garbage collection}
 
 \begin{itemize}
