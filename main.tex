@@ -318,7 +318,7 @@
     \begin{itemize}
         \item Consist in generating a $Map$ associating each position of the sequence $S$ to a new position
         \item To optimise the resulting sequence, the new positions should be aggregable into one block
-        \item i.e. the new positions must form a $position interval$
+        \item i.e. the new positions must form a $position \ interval$
         \item First, have to pick a position as the beginning of the interval
         \item This choice is arbitrary
         \item In our case, pick the following position $pos'$:
@@ -350,20 +350,56 @@
         \end{itemize}
     \end{itemize}
 
-\subsubsection{\emph{Epochs} mechanism}
+    \item \mnnote{TODO: Ajouter une phrase expliquant qu'on perd de l'information avec le renommage. Par exemple, on remplace le $id_{site}$ contenu dans la position qui identifie l'auteur de cet élément par $id'$ qui est l'identifiant de l'auteur du renommage}
+
+\end{itemize}
+
+\subsubsection{\emph{Epoch-based} mechanism}
+
+\begin{itemize}
+    \item A renaming can be seen as a change of frame of reference, applied to positions
+    \item Positions come from different frames according to if a renaming occurred between their generation
+    \item We should not compare positions from different frames as it is meaningless
+    \item It is thus necessary
+    \begin{itemize}
+        \item to define the frame of reference in which a given position is valid
+        \item add information to the system to model this frame
+    \end{itemize}
+    \item To achieve this, we introduce the notion of \emph{epochs}
+    \item The sequence has a default epoch : the \emph{origin} one
+    \item When a renaming is performed, a new epoch is generated and replaces the current epoch of the sequence
+    \item The set of these epochs forms a chain in the case of the centralised setting
+    \item The renamingMaps presented previously allow nodes to move their sequence from one epoch to the next one
+    \item By tagging operations with the current epoch at the time of generation, we can encapsulate its scope of validity
+    \item Upon reception of an operation, a node is able to determine by comparing its current epoch to the epoch embedded in the operation if it can be applied or if additional steps are required beforehand
+    \item To represent epochs, we use the following data structure:
+
+    \begin{center}
+        $epoch = <<epochNumber, id_{site}>, parentId>$
+    \end{center}
+
+    where:
+
+    \begin{itemize}
+        \item $epochNumber$ is the successor of the $epochNumber$ of the previous epoch
+        \item $id_{site}$ is the identifier of the node which generated the epoch
+        \item $<epochNumber, id_{site}>$ form the identifier of the epoch
+        \item $parentId$ refers to the previous epoch by its identifier
+    \end{itemize}
+\end{itemize}
+
 \subsubsection{Rename positions}
 \label{sec:renameForwardPos}
 
 
 $renameForwardPos(renamingMap, pos) = pos'$
 
-\subsubsection{Putting all together}
-\end{itemize}
+\subsubsection{Putting it all together}
 
 \subsection{Garbage collection}
 
 \begin{itemize}
-    \item As stated previously, the renaming generates additional metadata: the epochs and the rewriting rules used to transform concurrent operations against the renaming
+    \item As stated previously, the renaming generates additional metadata: the epochs and the renamingMaps used to transform concurrent operations against the renaming
     \item However, we do not need to keep this additional metadata forever
     \item Since they are used to handle concurrent operations to the renaming, they are not required anymore once no additional concurrent operation can be issued by a node
     \item i.e. we can safely garbage collect rewriting rules once the corresponding renaming operation is causally stable \cite{10.1007/978-3-662-43352-2_11}
@@ -374,7 +410,7 @@ $renameForwardPos(renamingMap, pos) = pos'$
         \item Upon the reception of an operation, the node updates the entry of the sender with the epoch of the operation
         \item As nodes collaborates, epochs in the vector will progress
         \item By retrieving the minimum epoch from the vector, we can identify which epoch has been reached by all nodes
-        \item We can then safely garbage collect all previous epochs and corresponding rewriting rules
+        \item We can then safely garbage collect all previous epochs and corresponding renamingMaps
     \end{itemize}
 \end{itemize}
 
@@ -418,12 +454,12 @@ $renameForwardPos(renamingMap, pos) = pos'$
 \subsection{Offloading on disk unused renaming rules}
 
 \begin{itemize}
-    \item As stated previously, nodes have to keep renaming rules as long as another nodes may issue operations which would require to be transformed to be applied
+    \item As stated previously, nodes have to keep renamingMaps as long as another nodes may issue operations which would require to be transformed to be applied
     \item Thus nodes need to keep track of the progress of others to determine if such operations can still be issued or if it is safe to garbage collect the renaming rules
     \item In a fully distributed setting, this requirement is difficult to reach as nodes may join the collaboration, perform some operations and then disconnect
     \item Other nodes, from their point of view, are not able to determine if they disconnected temporarily or if it left definitely the collaboration
     \item However, as the disconnected nodes stopped progressing, they hold back the whole system and keep the current active nodes from garbage collecting old renaming rules
-    \item To limit the impact of stale nodes on active ones, we propose that nodes offload unused renaming rules by storing them on disk
+    \item To limit the impact of stale nodes on active ones, we propose that nodes offload unused renamingMaps by storing them on disk
 \end{itemize}
 
 \mnnote{Présenter une méthode pour déterminer les règles de renommage non-utilisées (conserver uniquement les règles utilisées pour traiter les $x$ dernières opérations ?)}
@@ -434,7 +470,7 @@ $renameForwardPos(renamingMap, pos) = pos'$
 \begin{itemize}
     \item May reach a situation in which several nodes keep generating concurrent renaming operations on different epoch branches
     \item In such case, switching repeatedly between these concurrent branches may prove wasteful \mnnote{"costly" plutôt?}
-    \item However, as long as nodes possess the required renaming rules, they are able to rewrite operations from the other side and to integrate them into their copy, even if they are not on the latest epoch of their branch
+    \item However, as long as nodes possess the required renamingMaps, they are able to rewrite operations from the other side and to integrate them into their copy, even if they are not on the latest epoch of their branch
     \begin{itemize}
         \item At the cost of an overhead per operation
     \end{itemize}
