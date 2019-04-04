@@ -4,6 +4,8 @@
 \usepackage[utf8]{inputenc}
 
 \usepackage{acronym} % \ac[p], \acl[p], \acs[p], \acf[p]
+\usepackage{algorithm} % \begin{algorithm} \end{algorithm}
+\usepackage{algpseudocode} % \begin{algorithmic} \end{algorithmic}
 \usepackage{authblk} % \affil
 \usepackage[defernumbers=true, sorting=none]{biblatex}
 \usepackage[margin=1in]{geometry}
@@ -69,7 +71,7 @@
     \item \ac{ADT} which allows to represent a list of values
     \item Provide two operations to update the sequence, $insert$ and $remove$
     \item $insert(S, index, elt) = S'$ inserts the value $elt$ at the index $index$ into the sequence $S$ and returns the updated sequence $S'$
-    \item $remove(S, index) = S'$ removes from the sequence $s$ the value at the index $index$ and returns the updated sequence $S'$
+    \item $remove(S, index) = S'$ removes from the sequence $S$ the value at the index $index$ and returns the updated sequence $S'$
 \end{itemize}
 
 \subsection{\acp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
@@ -210,9 +212,7 @@
     \item \mnnote{Ici j'aimerais aussi ajouter quelques mots pour expliquer que le nombre de blocs influe négativement sur les performances de l'application (augmente le temps de parcours de la liste, et donc le temps d'exécution d'une insertion ou d'une suppression; doit conserver un $position \ interval$ pour chaque bloc). Une séquence est donc optimale si elle composée d'un unique bloc. Mais en raison des contraintes définissant les positions aggrégeables (insertions à des index consécutifs par un même noeud, sans suppression intermédiaire) et de l'absence de mécanisme pour fusionner à posteriori les blocs existants, les séquences issues d'une collaboration sont généralement morcelées en de nombreux blocs.}
 \end{itemize}
 
-\section{Approach}
-
-\subsection{Overview}
+\section{Overview}
 
 \begin{itemize}
     \item We build up on top of LogootSplit
@@ -227,9 +227,9 @@
     \item Will then present a more elaborated version of the renaming mechanism, overcoming the limitations of the centralised version and allowing its use in a distributed setting
 \end{itemize}
 
-\subsection{Renaming in a centralised setting}
+\section{Renaming in a centralised setting}
 
-\subsubsection{System Model}
+\subsection{System Model}
 
 \mnnote{NOTE: Ça me paraît correct mais confusant de parler d'un système centralisé pour un système P2P où seulement une fonctionnalité (le renommage) n'est disponible que pour un noeud particulier. Voir pour mieux présenter cet aspect}
 
@@ -256,7 +256,7 @@
     \item This node only is able to trigger renamings
 \end{itemize}
 
-\subsubsection{Specification}
+\subsection{Specification}
 
 \begin{itemize}
     \item Introduce a new operation $rename$
@@ -274,7 +274,93 @@
     \end{itemize}
 \end{itemize}
 
-\subsubsection{Garbage collection}
+\subsection{Proposition}
+
+\begin{itemize}
+    \item Decompose the $rename$ operation into the following components and steps
+\end{itemize}
+
+\subsubsection{renamingMap}
+
+\begin{itemize}
+    \item The first step is to generate the $renamingMap$.
+    \item This map associates each existing position of its current sequence to a new one
+    \item This map will be used by every nodes to apply the renaming on their state
+    \item It is computed by the node which triggers the $rename$ operation
+    \item As it needs to be broadcasted to other nodes, the size of the $renamingMap$ impacts the efficiency of the proposed solution
+    \item A mechanism to compress the $renamingMap$ will be \mnnote{NOTE: is?} presented in section \ref{sec:optimisation-renamingMap}
+    \item To compute this map, the node uses the algorithm described in algorithm \ref{alg:generateRenamingMap}
+
+    \begin{algorithm}
+        \caption{Generate renamingMap}
+        \label{alg:generateRenamingMap}
+        \begin{algorithmic}
+        \Function{generateRenamingMap}{$S, id', seq'$}
+            \State $renamingMap \gets Map()$
+            \State
+            \State $firstPos \gets S.getFirstPos()$
+            \State $firstTuple \gets firstPos.getFirstTuple()$
+            \State $priority \gets firstTuple.priority$
+            \Comment Retrieve the priority of the first tuple of the first position
+            \State
+            \ForAll{$(pos, index) \in S$}
+                \State $pos' \gets new \ Pos(<priority, id', seq', index>)$
+                \Comment Generate the new corresponding position
+                \State $renamingMap.set(pos, pos')$
+            \EndFor
+            \State
+            \State \Return $renamingMap$
+        \EndFunction
+        \end{algorithmic}
+    \end{algorithm}
+
+    \item This algorithm has the following behavior:
+    \begin{itemize}
+        \item Consist in generating a $Map$ associating each position of the sequence $S$ to a new position
+        \item To optimise the resulting sequence, the new positions should be aggregable into one block
+        \item i.e. the new positions must form a $position interval$
+        \item First, have to pick a position as the beginning of the interval
+        \item This choice is arbitrary
+        \item In our case, pick the following position $pos'$:
+
+        \begin{center}
+            $pos' = <priority, id', seq', 0>$
+        \end{center}
+
+        where:
+
+        \begin{itemize}
+            \item $priority$ is the same value as the $priority$ of the first tuple of the first element of the sequence. We explain this choice later in section \ref{sec:renameForwardPos}.
+            \item $id'$ is the $id_{site}$ of the node performing the $rename$ operation
+            \item $seq'$ is the current $seq_{site}$ of the node performing the $rename$ operation
+        \end{itemize}
+
+        \item The first position $pos$ of the current sequence will be map to $pos'$
+        \item Then, all former positions are mapped to the consecutive ones of the new position according to the existing order
+        \item All positions of the current sequence will be mapped to a set of positions which effectively form the following position interval $posInterval'$:
+
+        \begin{center}
+            $posInterval' = <pos', length - 1>$
+        \end{center}
+
+        where:
+
+        \begin{itemize}
+            \item $length$ is the length of the sequence
+        \end{itemize}
+    \end{itemize}
+
+\subsubsection{\emph{Epochs} mechanism}
+\subsubsection{Rename positions}
+\label{sec:renameForwardPos}
+
+
+$renameForwardPos(renamingMap, pos) = pos'$
+
+\subsubsection{Putting all together}
+\end{itemize}
+
+\subsection{Garbage collection}
 
 \begin{itemize}
     \item As stated previously, the renaming generates additional metadata: the epochs and the rewriting rules used to transform concurrent operations against the renaming
@@ -292,7 +378,7 @@
     \end{itemize}
 \end{itemize}
 
-\subsubsection{Limits}
+\subsection{Limits}
 
 \begin{itemize}
     \item The system is vulnerable to failures, as only one particular node is able to trigger renamings
@@ -317,13 +403,13 @@
     \item In fully distributed systems, there is no central authority to provide a set of stable nodes acting as the \emph{Core}
 \end{itemize}
 
-\subsection{Renaming in a fully distributed setting}
+\section{Renaming in a fully distributed setting}
 
-\subsubsection{System Model}
-\subsubsection{Intuition}
-\subsubsection{Strategy to determine leading epoch in case of concurrency}
-\subsubsection{Transitioning from a losing epoch to the leading one}
-\subsubsection{Garbage collection}
+\subsection{System Model}
+\subsection{Intuition}
+\subsection{Strategy to determine leading epoch in case of concurrency}
+\subsection{Transitioning from a losing epoch to the leading one}
+\subsection{Garbage collection}
 
 \section{Evaluation}
 
@@ -358,6 +444,8 @@
 \end{itemize}
 
 \subsection{Compressing the renaming operation}
+
+\label{sec:optimisation-renamingMap}
 
 \mnnote{TODO: Retravailler pour y ajouter la notion d'offset. Par contre, faire remarquer qu'on a pas besoin de l'offset pour identifier de manière unique "la base" d'une position (toute la position sauf l'offset)}
 
