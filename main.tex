@@ -8,6 +8,7 @@
 \usepackage{algpseudocode} % \begin{algorithmic} \end{algorithmic}
 \usepackage{authblk} % \affil
 \usepackage[defernumbers=true, sorting=none]{biblatex}
+\usepackage[inline]{enumitem}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{color}
@@ -248,7 +249,7 @@
     \end{itemize}
     \item To overcome the faults of the network, a message-passing layer is used to deliver messages to the application exactly-once, in the correct order
     \begin{itemize}
-        \item Removal of an element happens only after its insertion
+        \item At each node, the insertion of a position happens before its removal
     \end{itemize}
     \item An anti-entropy mechanism is used by nodes to synchronise in a pairwise manner, by detecting and re-exchanging lost messages
 
@@ -284,12 +285,12 @@
 
 \begin{itemize}
     \item The first step is to generate the $renamingMap$.
-    \item This map associates each existing position of its current sequence to a new one
-    \item This map will be used by every nodes to apply the renaming on their state
-    \item It is computed by the node which triggers the $rename$ operation
+    \item This map is computed by the node which triggers the $rename$ operation
+    \item It associates each existing position of its current sequence to a new one
+    \item It will be used by every nodes to apply the renaming on their state
     \item As it needs to be broadcasted to other nodes, the size of the $renamingMap$ impacts the efficiency of the proposed solution
-    \item A mechanism to compress the $renamingMap$ will be \mnnote{NOTE: is?} presented in section \ref{sec:optimisation-renamingMap}
-    \item To compute this map, the node uses the algorithm described in algorithm \ref{alg:generateRenamingMap}
+    \item A mechanism to compress the $renamingMap$ is introduced in section \ref{sec:optimisation-renamingMap}
+    \item To compute this map, the node uses the algorithm \ref{alg:generateRenamingMap}
 
     \begin{algorithm}
         \caption{Generate renamingMap}
@@ -330,7 +331,7 @@
         where:
 
         \begin{itemize}
-            \item $priority$ is the same value as the $priority$ of the first tuple of the first element of the sequence. We explain this choice later in section \ref{sec:renameForwardPos}.
+            \item $priority$ is the same value as the $priority$ of the first tuple of the first element of the sequence. We explain this choice in section \ref{sec:renameForwardPos}.
             \item $id'$ is the $id_{site}$ of the node performing the $rename$ operation
             \item $seq'$ is the current $seq_{site}$ of the node performing the $rename$ operation
         \end{itemize}
@@ -391,15 +392,86 @@
 \subsubsection{Rename positions}
 \label{sec:renameForwardPos}
 
+\begin{itemize}
+    \item To compute the new position corresponding to a given position in the new epoch, define the following function $renameForwardPos(renamingMap, pos) = pos'$
+    \item Its behavior, which is detailed in algorithm \ref{alg:renameForwardPos}, can be described as follow:
 
-$renameForwardPos(renamingMap, pos) = pos'$
+    \begin{algorithm}
+        \caption{Rename position}
+        \label{alg:renameForwardPos}
+        \begin{algorithmic}
+        \Function{renameForwardPos}{$renamingMap, pos$}
+            \If{$renamingMap.has(pos)$}
+                \State \Return $renamingMap.get(pos)$
+            \EndIf
+            \State
+
+            \State $renamedPositions \gets keysOf(renamingMap)$
+            \State $firstPos \gets renamedPositions[0]$
+            \State $lastPos \gets renamedPositions[renamedPositions.length - 1]$
+
+            \State $newFirstPos \gets renamingMap.get(firstPos)$
+            \State $newLastPos \gets renamingMap.get(lastPos)$
+
+            \State $minFirstPos \gets min(firstPos, newFirstPos)$
+            \State $maxLastPos \gets max(lastPos, newLastPos)$
+            \State
+
+            \If{$pos < minFirstPos$ \textbf{or} $maxLastPos < pos$}
+                \State \Return $pos$
+                \Comment Return the position unchanged as it does not conflict with the renaming
+            \EndIf
+            \State
+
+            % \If{$lastPos < pos < newLastPos$}
+            %     \State \Return $concat(newLastPos, pos)$
+            % \EndIf
+            % \State
+
+            \If{$newFirstPos < pos < firstPos$}
+                \State $<priority, id, seq, offset> \gets newFirstPos$
+                \Comment Retrieve all components of $newFirstPos$
+                \State $predecessorOfNewFirstPos \gets <priority, id, seq, offset - 1>$
+                \State \Return $concat(predecessorOfNewFirstPos, pos)$
+            \EndIf
+            \State
+
+            \State $predecessorOfPos \gets findPredecessor(renamedPositions, pos)$
+            \State $newPredecessorOfPos \gets renamingMap.get(predecessorPos)$
+            \State \Return $concat(newPredecessorOfPos, pos)$
+        \EndFunction
+        \end{algorithmic}
+    \end{algorithm}
+
+    \begin{itemize}
+        \item If $pos$ was one of the positions belonging to the state when the $renamingMap$ was computed, then its renaming has already been decided and its new value is stored in the $renamingMap$. We just return it.
+        \item If that is not the case, we need to compute the new position corresponding to it in the new frame of reference
+        \item To be able to preserve the existing order between $pos$ and other positions through the renaming, we use different strategies according to the position's value:
+        \begin{itemize}
+            \item We define respectively as $firstPos$ and $lastPos$ the first and last positions contained in the entries of the $renamingMap$, and $newFirstPos$ and $newLastPos$ their images in the new frame of reference.
+            \item If $pos$ is actually outside of the range impacted by the renaming, i.e \\ $pos < min(firstPos, newFirstPos)$ or $max(lastPos, newLastPos) < pos$, we can return it unchanged as it will not conflict with other renamed positions
+            % \item If we have $lastPos < pos < newLastPos$, we rename $pos$ to shift it just after $newLastPos$ by concatenating $pos$ to $newLastPos$.
+            \item If we have $newFirstPos < pos < firstPos$, we rename $pos$ to shift it just before $newFirstPos$ by concatenating $pos$ to the predecessor of $newFirstPos$. The predecessor of $newFirstPos$ is obtained by subtracting 1 to its $offset$ part.
+            \item In the remaining case, it means that we have $firstPos < pos < newLastPos$. In this case, we look for $predecessorOfPos$, the predecessor of $pos$ among the keys of $renamingMap$. Then, we retrieve the image of this position in the new state, $newPredecessorOfPos$. By concatenating $pos$ to $newPredecessorOfPos$, we are able to generate a new position while preserving the existing order.
+        \end{itemize}
+    \end{itemize}
+    \item The main idea of this approach is that we preserve the existing order between positions by concatenating the former positions to given prefixes to form the new positions.
+    \item The greater the original position, the greater the prefix used to compose the new position.
+    \item So, with $p1$ and $p2$ two positions such as $p1 < p2$ and $p1'$ and $p2'$ their respective renamed versions, we have
+    \begin{itemize}
+        \item either $p1'$ and $p2'$ sharing the same prefix. In that case, comparing $p1'$ and $p2'$ effectively comes down to comparing $p1$ and $p2$.
+        \item either the prefix of $p2'$ is greater than the prefix of $p1'$.
+    \end{itemize}
+    \item In both cases, we have $p1' < p2'$.
+    \item \mnnote{NOTE: Ce que je dis au-dessus concerne le cas où on a $firstPos < p1 < p2 < newLastPos$, mais est aussi vrai pour le cas où on a $newFirstPos < p1 < firstPos < p2$ mais de façon moins évidente. Reste aussi à montrer que l'ordre est conservé dans les cas limites ($p1 < newFirstPos < p2  < firstPos$; $lastPos < p1 < newLastPos < p2$). Renvoyer à la section validation.}
+\end{itemize}
 
 \subsubsection{Putting it all together}
 
 \subsection{Garbage collection}
 
 \begin{itemize}
-    \item As stated previously, the renaming generates additional metadata: the epochs and the renamingMaps used to transform concurrent operations against the renaming
+    \item As stated previously, the renaming mechanism generates and stores additional metadata: the epochs and the renamingMaps used to transform concurrent operations against the renaming
     \item However, we do not need to keep this additional metadata forever
     \item Since they are used to handle concurrent operations to the renaming, they are not required anymore once no additional concurrent operation can be issued by a node
     \item i.e. we can safely garbage collect rewriting rules once the corresponding renaming operation is causally stable \cite{10.1007/978-3-662-43352-2_11}
@@ -415,6 +487,12 @@ $renameForwardPos(renamingMap, pos) = pos'$
 \end{itemize}
 
 \subsection{Limits}
+
+\subsubsection{Size of concurrently generated positions}
+
+\mnnote{TODO: Ajouter quelques lignes sur le fait que le renommage a pour effet d'augmenter la taille des positions insérées en concurrence. Tempérer ce problème en argumentant que ce nombre de positions concurrentes devrait s'avérer faible par rapport au nombre total de positions contenues dans la séquence et qu'elles seront de toute façon réduites au cours du renommage suivant.}
+
+\subsubsection{Fault-tolerance}
 
 \begin{itemize}
     \item The system is vulnerable to failures, as only one particular node is able to trigger renamings
