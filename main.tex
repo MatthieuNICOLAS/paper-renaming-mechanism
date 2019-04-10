@@ -8,7 +8,7 @@
 \usepackage{algpseudocode} % \begin{algorithmic} \end{algorithmic}
 \usepackage{authblk} % \affil
 \usepackage[defernumbers=true, sorting=none]{biblatex}
-\usepackage[inline]{enumitem}
+\usepackage[inline]{enumitem} % \begin{enumerate*} \end{enumerate*}
 \usepackage[margin=1in]{geometry}
 \usepackage{graphicx}
 \usepackage{color}
@@ -463,10 +463,32 @@
         \item either the prefix of $p2'$ is greater than the prefix of $p1'$.
     \end{itemize}
     \item In both cases, we have $p1' < p2'$.
-    \item \mnnote{NOTE: Ce que je dis au-dessus concerne le cas où on a $firstPos < p1 < p2 < newLastPos$, mais est aussi vrai pour le cas où on a $newFirstPos < p1 < firstPos < p2$ mais de façon moins évidente. Reste aussi à montrer que l'ordre est conservé dans les cas limites ($p1 < newFirstPos < p2  < firstPos$; $lastPos < p1 < newLastPos < p2$). Renvoyer à la section validation.}
+    \item \mnnote{NOTE: Ce que je dis au-dessus concerne le cas où on a $firstPos < p1 < p2 < newLastPos$, mais est vrai aussi pour le cas où on a $newFirstPos < p1 < firstPos < p2$ de façon moins évidente.
+    \\
+    Reste à montrer que l'ordre est conservé dans les cas limites ($p1 < newFirstPos < p2  < firstPos$; $lastPos < p1 < newLastPos < p2$).
+    \\
+    Renvoyer à la section validation.}
 \end{itemize}
 
 \subsubsection{Putting it all together}
+
+\mnnote{
+    TODO: Expliquer qu'on propose un nouveau CRDT, \emph{<insérer un nom ici>} (RenamableLogootSplit?).
+    \\
+    Cette structure de données encapsule une liste répliquée en utilisant LogootSplit, mais maintient aussi l'epoch courante, une map des epochs et les renamingMaps permettant d'avancer d'une epoch à l'autre.
+    \\
+    Dispose des fonctions présentées précédemment, generateRenamingMap() et renameForwardPos().
+    \\
+    Propose la fonction $rename()$ qui retourne la séquence renommée en appliquant $renameForwardPos$ à chaque position de l'état courant.
+    \\
+    Surcharge le traitement des opérations $insert$ et $delete$ pour:
+    \\
+        - Déléguer le traitement de l'opération à l'instance de LogootSplit si l'epoch de génération correspond à l'epoch courante
+        \\
+        - Ou transformer l'opération au préalable à l'aide de renameForwardPos() (potentiellement à travers plusieurs epochs) si les epochs ne correspondent pas.
+        \\
+    Indiquer qu'on a une contrainte supplémentaire pour la livraison des opérations : elles doivent être livrées dans l'ordre causal par rapport à la dernière opération de renommage observée (doit être à la même epoch que celle de génération de l'opération ou à une epoch suivante pour pouvoir appliquer une opération).
+}
 
 \subsection{Garbage collection}
 
