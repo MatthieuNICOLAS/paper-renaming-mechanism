@@ -355,6 +355,19 @@
 
 \end{itemize}
 
+\mnnote{NOTE: Le mappage des anciennes positions aux nouvelles se fait de manière séquentielle et ne dépend pas en finalité de la valeur de la position initiale.
+    \\
+    On peut tout à fait remplacer la $renamingMap$ par:
+        \\
+        - la liste des positions renommées
+        \\
+        - et une fonction qui calcule la nouvelle position à partir de l'index de la position renommée, de $priority$ de la 1ère position renommée, de $id$ du noeud qui a déclenché le renommage et sa valeur de $seq$ à ce moment là.
+    \\
+    Ceci permet de limiter les métadonnées conservées qu'à l'ancien état, et non plus l'ancien état + $n$ nouvelles positions de longueur 1 (1 nouvelle position pour chaque position renommée).
+    \\
+    Retravailler cette partie en conséquence ?
+}
+
 \subsubsection{\emph{Epoch-based} mechanism}
 
 \begin{itemize}
