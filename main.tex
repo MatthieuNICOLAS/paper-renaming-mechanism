@@ -10,6 +10,7 @@
 \usepackage[defernumbers=true, sorting=none]{biblatex}
 \usepackage[inline]{enumitem} % \begin{enumerate*} \end{enumerate*}
 \usepackage[margin=1in]{geometry}
+\usepackage{amssymb} % \nexists
 \usepackage{graphicx}
 \usepackage{color}
 \AtBeginDocument{
@@ -82,6 +83,7 @@
     \item Updates performed without coordination between nodes
     \item Ensure \ac{SEC} \cite{shapiro_2011_crdt}
     \item \mnnote{TODO: Ajouter quelques phrases sur les différents types de CRDTs (State-based, Operation-based, Delta-based) et leurs spécificités. Indiquer qu'on se focalise sur une famille d'Operation-based CRDTs dans le cadre de ce papier.}
+    \item \mnnote{TODO: Ajouter quelques phrases sur les différentes approches pour les Sequence CRDTs et leurs spécificités. Indiquer qu'on se focalise sur la famille Dense Identifier-based.}
 \end{itemize}
 
 \subsection{Logoot \cite{WeissICDCS09}}
@@ -206,12 +208,30 @@
 \subsection{Limits}
 
 \begin{itemize}
-    \item As shown previously, LogootSplit positions' size is not bounded in order to comply with the dense set constraint
-    \item Positions will become longer as the collaboration progresses, downgrading the performances of the application \mnnote{NOTE: trouver un autre terme que "collaboration"?}
+    \item As shown previously, LogootSplit positions' size is not bounded in order to comply with the dense constraint.
+    \item As more elements are added to the sequence, less positions of the minimum size are available to insert new elements while respecting the intended order.
+    \item Thus the size of new positions tends to grow as the lifetime of the replicated sequence increases.
+    \item However, the growth of the size of positions impacts negatively the performances of the application on several aspects.
     \begin{itemize}
-        \item Since nodes have to broadcast positions, store them but also compare them to determine their order
+        \item As positions attached to elements become longer, the memory overhead of the data structure increases accordingly.
+        \item This also results in an increase of the bandwidth consumption, as positions have to be broadcast between nodes.
+        \item Also, operations needs to compare positions, either to look for the deleted positions or to find the place to insert the ones. The longer the positions are, the slower is the processing of operations.
     \end{itemize}
-    \item \mnnote{Ici j'aimerais aussi ajouter quelques mots pour expliquer que le nombre de blocs influe négativement sur les performances de l'application (augmente le temps de parcours de la liste, et donc le temps d'exécution d'une insertion ou d'une suppression; doit conserver un $position \ interval$ pour chaque bloc). Une séquence est donc optimale si elle composée d'un unique bloc. Mais en raison des contraintes définissant les positions aggrégeables (insertions à des index consécutifs par un même noeud, sans suppression intermédiaire) et de l'absence de mécanisme pour fusionner à posteriori les blocs existants, les séquences issues d'une collaboration sont généralement morcelées en de nombreux blocs.}
+    \item Additionally, the number of blocks composing the sequence tends to growth as well.
+    \item It is not always possible to add newly inserted positions to existing blocks because of the rules on the generation of positions and on their aggregability.
+    \item This results in the addition of new blocks to the sequence.
+    \item As no mechanism to merge blocks a posteriori is provided, the resulting sequence ends up being fragmented into many blocks.
+    \item This degrades as well the performances of the application, as the number of blocks increases the memory overhead of the data structure and the computation time required to browse the sequence.
+    \item \mnnote{
+        TODO: Illustrer ces baisses d'efficacité à l'aide de mesures :
+        \\
+        - Un graphe sur l'évolution du poids de la séquence par rapport au nombre d'éléments contenus en fonction du nombre d'opérations jouées préalablement
+        \\
+        - Un graphe sur l'évolution du temps de traitement d'une opération par rapport au nombre d'éléments contenus en fonction du nombre d'opérations jouées préalablement
+    }
+    \item It is thus necessary to either propose a more efficient specification of the replicated list, with a reduced growth of the overhead
+    \item ... or to provide a mechanism allowing to reset the overhead of the data structure at times.
+    \item The work introduced in this paper corresponds to the later approach.
 \end{itemize}
 
 \section{Overview}
@@ -275,13 +295,13 @@
         \item Each position is unique. Thus a $rename$ operation should not associate several positions to the same resulting one. To put it in a more formal way, the $rename$ operation must be designed such as:
 
         \begin{center}
-            $\not \exists p1, p2 \in Pos \cdot rename(p1) = rename(p2)$
+            $\nexists p1, p2 \in Pos \cdot rename(p1) = rename(p2)$
         \end{center}
 
         \item The sequence must be sorted with regards to the positions. The existing order between initial positions must then be preserved by the $rename$ operation. It results in the following property :
 
         \begin{center}
-            $\forall p1, p2 \in Pos \cdot p1 < p2, rename(p1) < rename(p2)$
+            $\forall p1, p2 \in Pos \land p1 < p2 \cdot rename(p1) < rename(p2)$
         \end{center}
 
     \end{itemize}
@@ -310,7 +330,7 @@
     \item It associates each existing position of its current sequence to a new one
     \item It will be used by every nodes to apply the renaming on their state
     \item \mnnote{TODO: Montrer qu'en se basant sur la renamingMap pour effectuer le renommage, on se découple de l'état courant du noeud au moment où il l'applique. Les noeuds prennent donc leurs décisions sur les mêmes entrées, ce qui garantit les mêmes résultats.}
-    \item As it needs to be broadcasted to other nodes, the size of the $renamingMap$ impacts the efficiency of the proposed solution
+    \item As it needs to be broadcast to other nodes, the size of the $renamingMap$ impacts the efficiency of the proposed solution
     \item A mechanism to compress the $renamingMap$ is introduced in section \ref{sec:optimisation-renamingMap}
     \item To compute this map, the node uses the algorithm \ref{alg:generateRenamingMap}
 
