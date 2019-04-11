@@ -507,7 +507,7 @@
             \item If $pos$ is actually outside of the range impacted by the renaming, i.e \\ $pos < min(firstPos, newFirstPos)$ or $max(lastPos, newLastPos) < pos$, we can return it unchanged as it will not conflict with other renamed positions
             % \item If we have $lastPos < pos < newLastPos$, we rename $pos$ to shift it just after $newLastPos$ by concatenating $pos$ to $newLastPos$.
             \item If we have $newFirstPos < pos < firstPos$, we rename $pos$ to shift it just before $newFirstPos$ by concatenating $pos$ to the predecessor of $newFirstPos$. The predecessor of $newFirstPos$ is obtained by subtracting 1 to its $offset$ part.
-            \item In the remaining case, it means that we have $firstPos < pos < newLastPos$. In this case, we look for $predecessorOfPos$, the predecessor of $pos$ among the keys of $renamingMap$. Then, we retrieve the image of this position in the new state, $newPredecessorOfPos$. By concatenating $pos$ to $newPredecessorOfPos$, we are able to generate a new position while preserving the existing order.
+            \item In the remaining case, it means that we have $firstPos < pos < maxLastPos$. In this case, we look for $predecessorOfPos$, the predecessor of $pos$ among the keys of $renamingMap$. Then, we retrieve the image of this position in the new state, $newPredecessorOfPos$. By concatenating $pos$ to $newPredecessorOfPos$, we are able to generate a new position while preserving the existing order.
         \end{itemize}
     \end{itemize}
     \item The main idea of this approach is that we preserve the existing order between positions by concatenating the former positions to given prefixes to form the new positions.
@@ -518,9 +518,9 @@
         \item either the prefix of $p2'$ is greater than the prefix of $p1'$.
     \end{itemize}
     \item In both cases, we have $p1' < p2'$.
-    \item \mnnote{NOTE: Ce que je dis au-dessus concerne le cas où on a $firstPos < p1 < p2 < newLastPos$, mais est vrai aussi pour le cas où on a $newFirstPos < p1 < firstPos < p2$ de façon moins évidente.
+    \item \mnnote{NOTE: Ce que je dis au-dessus concerne le cas où on a $firstPos < p1 < p2 < maxLastPos$, mais est vrai aussi pour le cas où on a $newFirstPos < p1 < firstPos < p2$ de façon moins évidente.
     \\
-    Reste à montrer que l'ordre est conservé dans les cas limites ($p1 < newFirstPos < p2  < firstPos$; $lastPos < p1 < newLastPos < p2$).
+    Reste à montrer que l'ordre est conservé dans les cas limites ($p1 < newFirstPos < p2  < firstPos$; $p1 < maxLastPos < p2$).
     \\
     Renvoyer à la section validation.}
 \end{itemize}
