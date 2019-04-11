@@ -260,18 +260,38 @@
 \subsection{Specification}
 
 \begin{itemize}
-    \item Introduce a new operation $rename$
-    \item This operation allows nodes to map each $position$ of their current sequence to a new one
+    \item Introduce a new operation $rename$.
+    \item This operation allows nodes to map each $position$ of their current sequence to a new one.
     \item Must be defined for all $positions$ of the current sequence of the node triggering the renaming...
-    \item ... but also for all $positions$ which can be added concurrently by other nodes
-    \item To ensure the correctness of the resulting sequences, this operation must comply with several properties
+    \item ... but also for all $positions$ which can be added concurrently by other nodes.
+    \item The $rename$ operation must preserve the safety properties of the system, which are:
     \begin{itemize}
-        \item $position \ uniqueness \ preservation$ : as $positions$ must be unique, a $rename$ operation should not map several $positions$ to the same resulting one
-        \item $order \ preservation$ : as $positions$ ensures the order of their respective element, a $rename$ operation should not shuffle this order
+        \item The resulting sequences must be valid
+        \item The nodes must converge
     \end{itemize}
-    \item To ensure the eventual consistency of the system, the $rename$ operation must also be commutative with the other operations $insert$ and $delete$ as nodes may receive and apply them in different orders
+    \item We define a sequence valid if
     \begin{itemize}
-        \item As no concurrent $rename$ operation can be issued, since only node is able to trigger the renaming mechanism, there is no need to design the $rename$ operation as commutative with itself
+        \item Each position is unique. Thus a $rename$ operation should not associate several positions to the same resulting one. To put it in a more formal way, the $rename$ operation must be designed such as:
+
+        \begin{center}
+            $\not \exists p1, p2 \in Pos \cdot rename(p1) = rename(p2)$
+        \end{center}
+
+        \item The sequence must be sorted with regards to the positions. The existing order between initial positions must then be preserved by the $rename$ operation. It results in the following property :
+
+        \begin{center}
+            $\forall p1, p2 \in Pos \cdot p1 < p2, rename(p1) < rename(p2)$
+        \end{center}
+
+    \end{itemize}
+
+    \item To ensure the Strong Eventual Consistency of the system, the $rename$ must be:
+    \begin{itemize}
+        \item Determinist : an operation being applied without any kind of coordination by nodes, it must always produce the same output so that nodes reach the same state.
+        \item Commutative with the $insert$ and $remove$ operations : as operations can be delivered in different orders at each node, for nodes to reach the same state in a coordination-free manner, the order of application of a set of operations must not have any impact on the resulting output.
+        \begin{itemize}
+            \item However, as only one node is able to trigger the renaming mechanism, it is impossible for concurrent $rename$ operations to exist. It is thus not required to design the $rename$ operation such as it is commutative with itself in this system model.
+        \end{itemize}
     \end{itemize}
 \end{itemize}
 
