@@ -99,7 +99,11 @@
         \item This allows the definition of commutative operations, providing a $Sequence$ suited for distributed settings
     \end{itemize}
 
-    \mnnote{TODO: Insérer un exemple de manipulation concurrente d'une séquence (ins/remove en parallèle), sans mécanisme de résolution de conflits, pour illustrer la divergence du résultat si on ne se base que sur des index}
+    \begin{figure}
+        \centering
+            \includegraphics[width=0.75\textwidth]{img/index-based-seq.pdf}
+        \caption{An example of concurrent operations on an index-based sequence leading to an inconsistency}
+    \end{figure}
 
     \item When inserting an element into the sequence, a fitting $position$ is computed by the node and associated to the element
     \item These $positions$ perform several roles
@@ -129,7 +133,11 @@
         \item $seq_{site}$ refers to the node's logical clock, which increases monotonically with local updates
     \end{itemize}
 
-    \mnnote{TODO: Reprendre l'exemple précédent, mais en remplaçant les index par des positions Logoot, pour illustrer la convergence}
+    \begin{figure}
+        \centering
+            \includegraphics[width=0.75\textwidth]{img/pos-based-seq.pdf}
+        \caption{The previous scenario fixed using Logoot positions instead of indexes}
+    \end{figure}
 
     \item It is worth to notice that: \mnnote{NOTE: J'illustre dans les prochains points comment la composition d'une position permet d'assurer l'ensemble des contraintes stipulées précédemment, mais l'explication concernant l'espace dense se révèle être particulièrement complexe et nécessiter de rentrer dans des détails. À garder ?}
     \begin{itemize}
