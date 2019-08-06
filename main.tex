@@ -10,7 +10,14 @@
 \usepackage[defernumbers=true, sorting=none]{biblatex}
 \usepackage[inline]{enumitem} % \begin{enumerate*} \end{enumerate*}
 \usepackage[margin=1in]{geometry}
+\usepackage{amsmath} % \begin{align*}
 \usepackage{amssymb} % \nexists
+
+\newcommand{\set}[1]{\left\{#1\right\}} % set brace notation
+\newcommand{\ssep}{\mid} % separator of set builder
+\newcommand{\tuple}[1]{\langle #1 \rangle}
+\newcommand{\toto}[3]{#1: #2 \text{ : #3}}
+
 \usepackage{graphicx}
 \usepackage{color}
 \AtBeginDocument{
@@ -69,12 +76,39 @@
 
 \subsection{Sequence}
 
-\begin{itemize}
-    \item \ac{ADT} which allows to represent a list of values
-    \item Provide two operations to update the sequence, $insert$ and $remove$
-    \item $insert(S, index, elt) = S'$ inserts the value $elt$ at the index $index$ into the sequence $S$ and returns the updated sequence $S'$
-    \item $remove(S, index) = S'$ removes from the sequence $S$ the value at the index $index$ and returns the updated sequence $S'$
-\end{itemize}
+The \emph{Sequence} is an \ac{ADT} which allows to represent a list of ordered values.
+Sequences are widely used in algorithms to represent collections of values where the order of the values is relevant such as strings, messages from a discussion or events from a log.
+Traditionally, implementations provided by programming languages support the following specification:
+
+\begin{figure}[h]
+    \begin{align*}
+    &\forall V: \mathsf{Value} \ \forall S: \mathsf{Sequence} \tuple{V}\\
+    &\toto{constructor}{\left( \right) \to S}{Generates and returns an empty sequence}\\
+    &\toto{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
+    &\toto{insert}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \times V \to S}{Inserts the given value into the sequence $s$ at the index $n$ and returns the updated sequence}\\
+    &\toto{remove}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \to S}{Removes the value from the sequence $s$ at the index $n$ and returns the updated sequence}\\
+    \end{align*}
+    \caption{Traditional specification of a sequence}
+    \label{fig:spec-seq}
+\end{figure}
+\mnnote{TODO: Fixer la mise en page pour que la description des opérations ne soient pas tronquées}\\
+
+However, this specification has been designed for a sequential execution.
+Using naively this \ac{ADT} in a distributed system to replicate a sequence among nodes would result in inconsistencies, as illustrated in \autoref{fig:basic-seq-divergence}.
+In this example, two nodes A and B own initially a copy the same sequence.
+Without coordinating, both of them perform an update and broadcast it to the other node.
+However, applying both updates does not yield the same final state on each node.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth]{img/index-based-seq.pdf}
+    \caption{Example of concurrent operations on an index-based sequence resulting into an inconsistency}
+    \label{fig:basic-seq-divergence}
+\end{figure}
+
+This issue is a well-know problem in the domain of collaborative editing and has been an area of research for many years.
+\mnnote{TODO: Ajouter des références à des papiers sur OT}
+These works eventually lead to new specifications of the \emph{Sequence} belonging to a new family of data types: \acfp{CRDT}. \mnnote{TODO: Ajouter référence à WOOT}
 
 \subsection{\acp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
 
@@ -99,12 +133,6 @@
         \item This allows the definition of commutative operations, providing a $Sequence$ suited for distributed settings
     \end{itemize}
 
-    \begin{figure}
-        \centering
-            \includegraphics[width=0.75\textwidth]{img/index-based-seq.pdf}
-        \caption{An example of concurrent operations on an index-based sequence leading to an inconsistency}
-    \end{figure}
-
     \item When inserting an element into the sequence, a fitting $position$ is computed by the node and associated to the element
     \item These $positions$ perform several roles
     \begin{itemize}
@@ -121,7 +149,7 @@
     \item To comply with these constraints, Logoot $positions$ are composed of one or several of the following tuples:
 
     \begin{center}
-        $\langle priority, id_{site}, seq_{site} \rangle$
+        $\tuple{priority, id_{site}, seq_{site}}$
     \end{center}
 
     where:
@@ -141,7 +169,7 @@
 
     \item It is worth to notice that: \mnnote{NOTE: J'illustre dans les prochains points comment la composition d'une position permet d'assurer l'ensemble des contraintes stipulées précédemment, mais l'explication concernant l'espace dense se révèle être particulièrement complexe et nécessiter de rentrer dans des détails. À garder ?}
     \begin{itemize}
-        \item The couple $\langle id_{site}, seq_{site} \rangle$ of the last tuple of the position ensures its uniqueness as
+        \item The couple $\tuple{id_{site}, seq_{site}}$ of the last tuple of the position ensures its uniqueness as
         \begin{itemize}
             \item No other node can generate a position using the same $id_{site}$ as it is unique
             \item No other position can be generated by the same node using the same $seq_{site}$ as it is increasing monotonically with local updates
@@ -173,14 +201,14 @@
     \item LogootSplit $positions$ are thus composed of one or several of the following tuples:
 
     \begin{center}
-        $\langle priority, id_{site}, seq_{site}, offset \rangle$
+        $\tuple{priority, id_{site}, seq_{site}, offset}$
     \end{center}
 
     \item Define positions as aggregable if all components but the $offsets$ of their last tuple are identical and if their respective $offsets$ are consecutive
     \item Define $position \ interval$ as the following couple:
 
     \begin{center}
-        $\langle posBegin, end \rangle$
+        $\tuple{posBegin, end}$
     \end{center}
 
     where:
@@ -193,7 +221,7 @@
     \item Given these two values, we are able to recreate all positions from the interval if needed
     \item It is worth to notice that
     \begin{itemize}
-        \item The uniqueness of a LogootSplit position is ensured by the triple $\langle id_{site}, seq_{site}, offset \rangle$
+        \item The uniqueness of a LogootSplit position is ensured by the triple $\tuple{id_{site}, seq_{site}, offset}$
         \item As such, an $offset$ can not be used twice for the same block
         \item It is then necessary to prevent such a case from happening when a node prepend or append a new element to an existing block
         \item It can be achieved by keeping track of used $offset$ per block
@@ -361,7 +389,7 @@
             \Comment Retrieve the priority of the first tuple of the first position
             \State
             \ForAll{$(pos, index) \in S$}
-                \State $pos' \gets new \ Pos(\langle priority, id', seq', index \rangle)$
+                \State $pos' \gets new \ Pos(\tuple{priority, id', seq', index})$
                 \Comment Generate the new corresponding position
                 \State $renamingMap.set(pos, pos')$
             \EndFor
@@ -381,7 +409,7 @@
         \item In our case, pick the following position $pos'$:
 
         \begin{center}
-            $pos' = \langle priority, id', seq', 0 \rangle$
+            $pos' = \tuple{priority, id', seq', 0}$
         \end{center}
 
         where:
@@ -397,7 +425,7 @@
         \item All positions of the current sequence will be mapped to a set of positions which effectively form the following position interval $posInterval'$:
 
         \begin{center}
-            $posInterval' = \langle pos', length - 1 \rangle$
+            $posInterval' = \tuple{pos', length - 1}$
         \end{center}
 
         where:
@@ -445,7 +473,7 @@
     \item To represent epochs, we use the following data structure:
 
     \begin{center}
-        $\langle \langle epochNumber, id_{site} \rangle, parentId\rangle$
+        $\tuple{\tuple{epochNumber, id_{site}}, parentId}$
     \end{center}
 
     where:
@@ -453,7 +481,7 @@
     \begin{itemize}
         \item $epochNumber$ is the successor of the $epochNumber$ of the previous epoch
         \item $id_{site}$ is the identifier of the node which generated the epoch
-        \item $\langle epochNumber, id_{site} \rangle$ form the identifier of the epoch
+        \item $\tuple{epochNumber, id_{site}}$ form the identifier of the epoch
         \item $parentId$ refers to the previous epoch by its identifier
     \end{itemize}
 \end{itemize}
@@ -500,7 +528,7 @@
             \If{$newFirstPos < pos < firstPos$}
                 \State $<priority, id, seq, offset> \gets newFirstPos$
                 \Comment Retrieve all components of $newFirstPos$
-                \State $predecessorOfNewFirstPos \gets \langle priority, id, seq, offset - 1 \rangle$
+                \State $predecessorOfNewFirstPos \gets \tuple{priority, id, seq, offset - 1}$
                 \State \Return $concat(predecessorOfNewFirstPos, pos)$
             \EndIf
             \State
@@ -524,7 +552,7 @@
             \item In the remaining case, it means that we have $firstPos < pos < maxLastPos$. In this case, we look for $predecessorOfPos$, the predecessor of $pos$ among the keys of $renamingMap$. Then, we retrieve the image of this position in the new state, $newPredecessorOfPos$. By concatenating $pos$ to $newPredecessorOfPos$, we are able to generate a new position while preserving the existing order.
         \end{itemize}
     \end{itemize}
-    \item The main idea of this approach is that we preserve the existing order between positions by concatenating the former positions to given prefixes to form the new positions.
+    \item The main idea of this approach is to preserve the existing order between positions by concatenating the former positions to given prefixes to form the new positions.
     \item The greater the original position, the greater the prefix used to compose the new position.
     \item So, with $p1$ and $p2$ two positions such as $p1 < p2$ and $p1'$ and $p2'$ their respective renamed versions, we have
     \begin{itemize}
