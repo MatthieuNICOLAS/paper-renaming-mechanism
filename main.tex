@@ -18,6 +18,14 @@
 \newcommand{\ssep}{\mid} % separator of set builder
 \newcommand{\tuple}[1]{\langle #1 \rangle}
 
+% Theorem
+% ------
+\usepackage{amsthm} %\newcounter{<name>}[<counter-name>]{<displayed-name>}
+
+\newcounter{definition-counter}
+\theoremstyle{definition}
+\newtheorem{definition}[definition-counter]{Definition}
+
 \usepackage{graphicx}
 \usepackage{color}
 \AtBeginDocument{
@@ -111,15 +119,36 @@ This issue is a well-know problem in the domain of collaborative editing and has
 \mnnote{TODO: Ajouter des références à des papiers sur OT}
 These works eventually lead to new specifications of the \emph{Sequence} belonging to a new family of data types: \acfp{CRDT}. \mnnote{TODO: Ajouter référence à WOOT}
 
-\subsection{\acp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
+\subsection{\acfp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
 
-\begin{itemize}
-    \item Optimistically replicated data structure
-    \item Updates performed without coordination between nodes
-    \item Ensure \ac{SEC} \cite{shapiro_2011_crdt}
-    \item \mnnote{TODO: Ajouter quelques phrases sur les différents types de CRDTs (State-based, Operation-based, Delta-based) et leurs spécificités. Indiquer qu'on se focalise sur une famille d'Operation-based CRDTs dans le cadre de ce papier.}
-    \item \mnnote{TODO: Ajouter quelques phrases sur les différentes approches pour les Sequence CRDTs et leurs spécificités. Indiquer qu'on se focalise sur la famille Dense Identifier-based.}
-\end{itemize}
+\acfp{CRDT} are new specifications of \acp{ADT}, such as the \emph{Set} or the \emph{Sequence}.
+Contrary to traditional specifications, \acp{CRDT} are designed to support natively concurrent updates.
+To this end, these data types embed directly into their specification a conflict resolution mechanism.
+These specifications can be followed to implement optimistically replicated data structures which ensure \acf{SEC} \cite{shapiro_2011_crdt}.
+
+\begin{definition}[Strong Eventual Consistency]\label{def:sec}
+\acf{SEC} is a consistency model which guarantees that any two nodes of the distributed system observing the same set of updates reach equivalent states, without requiring any other communications than the ones needed to broadcast the updates.
+\end{definition}
+
+These data structures are particularly suited to build highly-available large-scale distributed systems in which nodes share and update data without any coordination.
+
+
+For a given \ac{ADT}, several specifications of \acp{CRDT} can be proposed.
+They can be classified into three categories: State-based \acp{CRDT}, Operation-based \acp{CRDT} and Delta-based \acp{CRDT}.
+State-based \acp{CRDT} are often more complex data structures than their Operation-based counterparts, but make no assumptions on the reliability of the message-passing layer.
+Operation-based \acp{CRDT} are thus simpler but usually rely on a message-passing layer ensuring the exactly-once causally-ordered delivery of updates.
+The third category, the Delta-based \acp{CRDT} one, was more recently proposed and draws out the best from both worlds.
+
+
+To solve conflicts deterministically and ensure the convergence of all nodes, \acp{CRDT} relies on additional metadata.
+In the context of Sequence \acp{CRDT}, two different approaches were proposed, each trying to minimize the overhead introduced.
+The first one affixes constant-sized identifiers to each value in the sequence and uses them to represent the sequence as a linked list.
+The downside of this approach is an evergrowing overhead, as it needs to keep removed values to deal with potential concurrent updates, effectively turning them into tombstones.
+The second one avoids the need of tombstones by instead attaching dense identifiers to values.
+It is then able to order values into the sequence by comparing their respective identifiers.
+However this approach also suffers from an increasing overhead, as the size of such dense identifiers is variable and grows over time.
+
+In this paper, we focus on Densely-identified Operation-based Sequence \acp{CRDT} and propose a renaming mechanism to reduce the metadata overhead introduced by this approach.
 
 \subsection{Logoot \cite{WeissICDCS09}}
 
