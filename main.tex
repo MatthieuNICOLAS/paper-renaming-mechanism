@@ -13,10 +13,10 @@
 \usepackage{amsmath} % \begin{align*}
 \usepackage{amssymb} % \nexists
 
+\newcommand{\fnspec}[3]{#1: #2 \text{ : #3}}
 \newcommand{\set}[1]{\left\{#1\right\}} % set brace notation
 \newcommand{\ssep}{\mid} % separator of set builder
 \newcommand{\tuple}[1]{\langle #1 \rangle}
-\newcommand{\toto}[3]{#1: #2 \text{ : #3}}
 
 \usepackage{graphicx}
 \usepackage{color}
@@ -83,15 +83,16 @@ Traditionally, implementations provided by programming languages support the fol
 \begin{figure}[h]
     \begin{align*}
     &\forall V: \mathsf{Value} \ \forall S: \mathsf{Sequence} \tuple{V}\\
-    &\toto{constructor}{\left( \right) \to S}{Generates and returns an empty sequence}\\
-    &\toto{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
-    &\toto{insert}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \times V \to S}{Inserts the given value into the sequence $s$ at the index $n$ and returns the updated sequence}\\
-    &\toto{remove}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \to S}{Removes the value from the sequence $s$ at the index $n$ and returns the updated sequence}\\
+    &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty sequence}\\
+    &\fnspec{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
+    &\fnspec{get}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \to V}{Returns the value from the sequence $s$ at the index $n$}\\
+    &\fnspec{insert}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \times V \to S}{Inserts the given value into the sequence $s$ at the index $n$ and returns the updated sequence}\\
+    &\fnspec{remove}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \to S}{Removes the value from the sequence $s$ at the index $n$ and returns the updated sequence}\\
     \end{align*}
     \caption{Traditional specification of a sequence}
     \label{fig:spec-seq}
 \end{figure}
-\mnnote{TODO: Fixer la mise en page pour que la description des opérations ne soient pas tronquées}\\
+\mnnote{TODO: Fixer la mise en page pour que les descriptions des fonctions ne soient pas tronquées}\\
 
 However, this specification has been designed for a sequential execution.
 Using naively this \ac{ADT} in a distributed system to replicate a sequence among nodes would result in inconsistencies, as illustrated in \autoref{fig:basic-seq-divergence}.
