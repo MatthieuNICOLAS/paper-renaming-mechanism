@@ -14,6 +14,8 @@
 \usepackage{amssymb} % \nexists
 
 \newcommand{\fnspec}[3]{#1: #2 \text{ : #3}}
+\newcommand{\inbb}[1]{\in \mathbb{#1}}
+\newcommand{\mathlist}[2]{\set{#1_i: #2}_{i \inbb{N}}}
 \newcommand{\set}[1]{\left\{#1\right\}} % set brace notation
 \newcommand{\ssep}{\mid} % separator of set builder
 \newcommand{\tuple}[1]{\langle #1 \rangle}
@@ -91,11 +93,12 @@ Traditionally, implementations provided by programming languages support the fol
 \begin{figure}[h]
     \begin{align*}
     &\forall V: \mathsf{Value} \ \forall S: \mathsf{Sequence} \tuple{V}\\
+    &S = \mathlist{v}{V}\\
     &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty sequence}\\
     &\fnspec{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
-    &\fnspec{get}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \to V}{Returns the value from the sequence $s$ at the index $n$}\\
-    &\fnspec{insert}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \times V \to S}{Inserts the given value into the sequence $s$ at the index $n$ and returns the updated sequence}\\
-    &\fnspec{remove}{\set{s \in S} \times \set{ n \in \mathbb{N} \ssep n < length(s) } \to S}{Removes the value from the sequence $s$ at the index $n$ and returns the updated sequence}\\
+    &\fnspec{get}{\set{s \in S} \times \set{ n \inbb{N} \ssep n < length(s) } \to V}{Returns the value from the sequence $s$ at the index $n$}\\
+    &\fnspec{insert}{\set{s \in S} \times \set{ n \inbb{N} \ssep n < length(s) } \times V \to S}{Inserts the given value into the sequence $s$ at the index $n$ and ... }\\ % returns the updated sequence}\\
+    &\fnspec{remove}{\set{s \in S} \times \set{ n \inbb{N} \ssep n < length(s) } \to S}{Removes the value from the sequence $s$ at the index $n$ and returns ... }% the updated sequence}
     \end{align*}
     \caption{Traditional specification of a sequence}
     \label{fig:spec-seq}
@@ -104,7 +107,7 @@ Traditionally, implementations provided by programming languages support the fol
 
 However, this specification has been designed for a sequential execution.
 Using naively this \ac{ADT} in a distributed system to replicate a sequence among nodes would result in inconsistencies, as illustrated in \autoref{fig:basic-seq-divergence}.
-In this example, two nodes A and B own initially a copy the same sequence.
+In this example, two nodes A and B own initially a copy of the same sequence.
 Without coordinating, both of them perform an update and broadcast it to the other node.
 However, applying both updates does not yield the same final state on each node.
 
@@ -117,7 +120,7 @@ However, applying both updates does not yield the same final state on each node.
 
 This issue is a well-know problem in the domain of collaborative editing and has been an area of research for many years.
 \mnnote{TODO: Ajouter des références à des papiers sur OT}
-These works eventually lead to new specifications of the \emph{Sequence} belonging to a new family of data types: \acfp{CRDT}. \mnnote{TODO: Ajouter référence à WOOT}
+These works eventually led to new specifications of the \emph{Sequence} belonging to a new family of data types: \acfp{CRDT}. \mnnote{TODO: Ajouter référence à WOOT}
 
 \subsection{\acfp{CRDT} \cite{shapiro:inria-00555588, shapiro_2011_crdt}}
 
@@ -127,18 +130,16 @@ To this end, these data types embed directly into their specification a conflict
 These specifications can be followed to implement optimistically replicated data structures which ensure \acf{SEC} \cite{shapiro_2011_crdt}.
 
 \begin{definition}[Strong Eventual Consistency]\label{def:sec}
-\acf{SEC} is a consistency model which guarantees that any two nodes of the distributed system observing the same set of updates reach equivalent states, without requiring any other communications than the ones needed to broadcast the updates.
+\acf{SEC} is a consistency model which guarantees that any two nodes of the distributed system observing the same set of updates reach equivalent states, without requiring any further communications than the ones needed to broadcast the updates.
 \end{definition}
 
 These data structures are particularly suited to build highly-available large-scale distributed systems in which nodes share and update data without any coordination.
-
 
 For a given \ac{ADT}, several specifications of \acp{CRDT} can be proposed.
 They can be classified into three categories: State-based \acp{CRDT}, Operation-based \acp{CRDT} and Delta-based \acp{CRDT}.
 State-based \acp{CRDT} are often more complex data structures than their Operation-based counterparts, but make no assumptions on the reliability of the message-passing layer.
 Operation-based \acp{CRDT} are thus simpler but usually rely on a message-passing layer ensuring the exactly-once causally-ordered delivery of updates.
 The third category, the Delta-based \acp{CRDT} one, was more recently proposed and draws out the best from both worlds.
-
 
 To solve conflicts deterministically and ensure the convergence of all nodes, \acp{CRDT} relies on additional metadata.
 In the context of Sequence \acp{CRDT}, two different approaches were proposed, each trying to minimize the overhead introduced.
