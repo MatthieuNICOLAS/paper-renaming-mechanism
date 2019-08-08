@@ -28,6 +28,14 @@
 \theoremstyle{definition}
 \newtheorem{definition}[definition-counter]{Definition}
 
+\newcounter{note-counter}
+\theoremstyle{definition}
+\newtheorem{note}[note-counter]{Note}
+
+\newcounter{property-counter}
+\theoremstyle{definition}
+\newtheorem{property}[property-counter]{Property}
+
 \usepackage{graphicx}
 \usepackage{color}
 \AtBeginDocument{
@@ -153,72 +161,126 @@ In this paper, we focus on Densely-identified Operation-based Sequence \acp{CRDT
 
 \subsection{Logoot \cite{WeissICDCS09}}
 
+Logoot is a Element-wise Densely-identified Operation-based Sequence \ac{CRDT}.
+Its key insight is to replace the use of mutable $indexes$ to refer to values into the sequence with immutable $positions$.
+As illustrated previously in \autoref{fig:basic-seq-divergence}, in the case of traditional sequences, operations update the sequence and shift values, resulting in inconsistencies when applying several concurrent operations.
+By using immutable $positions$ to refer to values, Logoot is able to define a sequence with commutative operations, suited for usages in distributed settings.
+
+When inserting a value into the sequence, the node generates a fitting $position$ and associates it to the value.
+These $positions$ fulfill several roles:
+
+\begin{note}
+    A $position$ identifies uniquely a value.
+\end{note}
+
+\begin{note}
+    A $position$ embodies the intended order relation between the value and other values from the sequence.
+\end{note}
+
+% \begin{enumerate}
+%     \item A $position$ identifies uniquely a value.
+%     \item A $position$ embodies the intended order relation between the value and other values from the sequence.
+% \end{enumerate}
+
+To perform these roles, $positions$ have to comply to several constraints:
+
+\begin{property}(Global Unicity)\label{prop:global-unicity}
+    Nodes should not able to compute the same $position$ concurrently.
+\end{property}
+
+\begin{property}(Timeless Unicity)\label{prop:timeless-unicity}
+    Nodes should not be able to associate the same $position$ to different values during the lifetime of the sequence.
+\end{property}
+
+\begin{property}(Total Order)\label{prop:total-order}
+    A total order relation must exist over $positions$ so nodes can order two values given their respective $positions$.
+\end{property}
+
+\begin{property}(Dense Set)\label{prop:dense-set}
+    Nodes should always be able to generate new $positions$ between two others.
+\end{property}
+
+To define $positions$ meeting these properties, Logoot first introduces \emph{LogootTuples} which are specified as in \autoref{fig:spec-logoot-tuple}.
+\emph{LogootTuples} are triples made of the following elements:
 \begin{itemize}
-    \item Element-wise Sequence \ac{CRDT}
-    \item Key insight is to replace changing and unreliable $indexes$ with universal and immutable $positions$
-    \begin{itemize}
-        \item $indexes$ are adapted for sequential executions
-        \item They are closely tied to the current state of the sequence, as updating the later shift them
-        \item However, they can not be used in a distributed setting, in which the order of the execution of the updates can be different from one node to another, to embody the user's intention
-        \item Conversely, Logoot's $positions$ are designed to be independent of the state
-        \item This allows the definition of commutative operations, providing a $Sequence$ suited for distributed settings
-    \end{itemize}
-
-    \item When inserting an element into the sequence, a fitting $position$ is computed by the node and associated to the element
-    \item These $positions$ perform several roles
-    \begin{itemize}
-        \item They identify uniquely an element
-        \item They order the elements relatively to each other
-    \end{itemize}
-    \item To be able to perform these roles, $positions$ need to comply with several constraints
-    \begin{itemize}
-        \item Be globally unique: several nodes should not able to compute the same $position$ concurrently
-        \item Be temporarily unique: a node should not be able to associate the same $position$ to different elements during the lifetime of the sequence
-        \item Be totally ordered: a order relation must exist over $positions$ so a node can order two elements given their respective $position$
-        \item Belong to a dense set: a node should always be able to generate a new $position$ between two others
-    \end{itemize}
-    \item To comply with these constraints, Logoot $positions$ are composed of one or several of the following tuples:
-
-    \begin{center}
-        $\tuple{priority, id_{site}, seq_{site}}$
-    \end{center}
-
-    where:
-
-    \mnnote{NOTE: on utilise actuellement des entiers pour représenter les éléments des tuples à l'heure actuelle mais pourrait utiliser n'importe quel type disposant d'une relation d'ordre, donc je ne sais pas quel type indiquer ici}
-    \begin{itemize}
-        \item $priority$ allows to determine the location of this position relatively to others
-        \item $id_{site}$ refers to the node's identifier, assumed to be unique
-        \item $seq_{site}$ refers to the node's logical clock, which increases monotonically with local updates
-    \end{itemize}
-
-    \begin{figure}
-        \centering
-            \includegraphics[width=0.75\textwidth]{img/pos-based-seq.pdf}
-        \caption{The previous scenario fixed using Logoot positions instead of indexes}
-    \end{figure}
-
-    \item It is worth to notice that: \mnnote{NOTE: J'illustre dans les prochains points comment la composition d'une position permet d'assurer l'ensemble des contraintes stipulées précédemment, mais l'explication concernant l'espace dense se révèle être particulièrement complexe et nécessiter de rentrer dans des détails. À garder ?}
-    \begin{itemize}
-        \item The couple $\tuple{id_{site}, seq_{site}}$ of the last tuple of the position ensures its uniqueness as
-        \begin{itemize}
-            \item No other node can generate a position using the same $id_{site}$ as it is unique
-            \item No other position can be generated by the same node using the same $seq_{site}$ as it is increasing monotonically with local updates
-        \end{itemize}
-        \item Every part of positions can be used to define a total order based on the lexicographical order
-        \item To ensure that positions form a dense set, we have to reserve exclusively the usage of the minimal value of $priority$ to a specific tuple, $minTuple$. By doing this we have, for every other tuple $t$, $minTuple < t$. $minTuple$ is then used only as an intermediary tuple, the default value when a node has to generate a tuple less than another one, but is not able to. Thus, given two positions $p1$ and $p2$ such as $p1 < p2$, any node is always able to generate a new position $p3$ such as $p1 < p3 < p2$ by reusing the tuples of $p1$, appending $minTuple$ as many times as required and finally adding its own new tuple $t$.
-    \end{itemize}
-    \item Updates the definition of the operations $insert$ and $remove$ to take into account these changes
-    \begin{itemize}
-        \item $insert(S, pos, elt) = S'$ inserts the value $elt$ at the position $pos$ into the sequence $S$ and returns the updated sequence $S'$
-        \item $remove(S, pos) = S'$ removes from the sequence $S$ the value at the position $pos$ and returns the updated sequence $S'$
-    \end{itemize}
-    \item Provides some functions to nodes so they can obtain $positions$ from $indexes$
-    \begin{itemize}
-        \item $generatePos(S, index) = pos$ generates a new position $pos$ corresponding to the index $index$ of the current sequence $S$
-        \item $getPos(S, index) = pos$ retrieves the position $pos$ of the element at the index $index$ in the current sequence $S$
-    \end{itemize}
+    \item $priority$: sets the order of this tuple relatively to others, arbitrary picked by the node upon generation
+    \item $id_{site}$: refers to the node's identifier, assumed to be unique
+    \item $seq_{site}$: refers to the node's logical clock, which increases monotonically with local updates
 \end{itemize}
+
+\begin{figure}[h]
+    \begin{align*}
+    &\forall T: \mathsf{LogootTuple}\\
+    &T = \tuple{priority \inbb{N}, id_{site} \inbb{I}, seq_{site} \inbb{N}}\\
+    &\fnspec{constructor}{\mathbb{N} \times \mathbb{I} \times \mathbb{N} \to T}{Returns a LogootTuple made of the given $priority$, $id_{site}$ and $seq_{site}$}\\
+    &\fnspec{priority}{T \to \mathbb{N}}{Returns the $priority$ of the given tuple}\\
+    &\fnspec{peer}{T \to \mathbb{I}}{Returns the $id_{site}$ of the given tuple}\\
+    &\fnspec{seq}{T \to \mathbb{N}}{Returns the $seq_{site}$ of the given tuple}
+    \end{align*}
+    \caption{Specification of a Logoot tuple}
+    \label{fig:spec-logoot-tuple}
+\end{figure}
+
+Based on this building block, Logoot defines positions as sequences of \emph{LogootTuples}, as shown in \autoref{fig:spec-logoot-pos}.
+
+\begin{figure}[h]
+    \begin{align*}
+    &\forall T: \mathsf{LogootTuple} \ \forall P: \mathsf{LogootPos}\\
+    &P = \mathlist{t}{T}\\
+    &\fnspec{constructor}{\mathlist{t}{T} \to P}{Returns a LogootPos made of the given tuples}\\
+    &\fnspec{get}{\set{p \in P} \times \set{n \inbb{N} \ssep n < length(p)} \to T}{Returns the n-th tuple of the given position}\\
+    &\fnspec{lastTuple}{P \to T}{Returns the last tuple of the given position}\\
+    &\fnspec{peer}{P \to \mathbb{I}}{Returns the $id_{site}$ of the last tuple of the given position}\\
+    &\fnspec{seq}{P \to \mathbb{N}}{Returns the $seq_{site}$ of the last tuple of the given position}\\
+    &\fnspec{uid}{P \to \tuple{\mathbb{I}, \mathbb{N}}}{Returns the unique id of the given position}
+    \end{align*}
+    \caption{Specification of a Logoot position}
+    \label{fig:spec-logoot-pos}
+\end{figure}
+
+It allows positions to meet all the required constraints:
+\begin{note}
+    Given a position $p$, the couple $\tuple{peer(p), seq(p)}$ is globally and timelessly unique as:
+    \begin{itemize}
+        \item No other node can generate a position using the same $id_{site}$ as it is unique
+        \item No other position can be generated by the same node using the same $seq_{site}$ as it is increasing monotonically with local updates
+    \end{itemize}
+\end{note}
+
+\begin{note}
+    A dense total order can be created over positions by:
+    \begin{itemize}
+        \item Comparing theirs tuples using the lexicographical order
+        \item Defining a special tuple, $minTuple$ such that $\forall t \in LogootTuple \cdot minTuple < t$.
+        Given two positions $p1, p2$ such as $p1 < p2$, it allows any node to generate a new position $p3$ such as $p1 < p3 < p2$ by reusing the tuples of $p1$, appending $minTuple$ as many times as required and finally appending a tuple of its own creation.
+    \end{itemize}
+\end{note}
+
+Relying on these positions, Logoot proposes a new specification corresponding to a replicable sequence, described in \autoref{fig:spec-logoot-seq}.
+
+\begin{figure}[h]
+    \begin{align*}
+    &\forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSeq} \tuple{V}\\
+    &S = \set{\tuple{p: \mathsf{LogootPos}, v: \mathsf{Value}}_i}_{i \inbb{N}}\\
+    &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty Logoot sequence}\\
+    &\fnspec{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
+    &\fnspec{getPos}{\set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to LogootPos}{Returns ...}\\
+    &\fnspec{generatePos}{\mathbb{I} \times \mathbb{N} \times \set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to LogootPos}{Returns ...}\\
+    &\fnspec{insert}{S \times LogootPos \times V \to S}{Inserts the given value into the sequence using its position and returns...}\\
+    &\fnspec{remove}{S \times LogootPos \to S}{Removes the value from the sequence attached to the given position and returns...}
+    \end{align*}
+    \caption{Specification of a Logoot sequence}
+    \label{fig:spec-logoot-seq}
+\end{figure}
+
+Using this data type, we can replay the previous scenario while this time ensuring the correctness and convergence of the final states as illustrated in \autoref{fig:logoot-seq-convergence}. Thanks to positions, each node is able to insert the value at the correct place and to remove the intended value.
+
+\begin{figure}
+    \centering
+        \includegraphics[width=0.75\textwidth]{img/pos-based-seq.pdf}
+    \caption{The previous scenario fixed using Logoot positions instead of indexes}
+    \label{fig:logoot-seq-convergence}
+\end{figure}
 
 \subsection{LogootSplit \cite{AndreCollaborateCom2013}}
 
