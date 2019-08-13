@@ -13,10 +13,13 @@
 \usepackage{amsmath} % \begin{align*}
 \usepackage{amssymb} % \nexists
 
+\newcommand{\commands}[1]{commands = \set{#1}}
 \newcommand{\fnspec}[3]{#1: #2 \text{ : #3}}
 \newcommand{\inbb}[1]{\in \mathbb{#1}}
 \newcommand{\mathlist}[2]{\set{#1_i: #2}_{i \inbb{N}}}
+\newcommand{\queries}[1]{queries = \set{#1}}
 \newcommand{\set}[1]{\left\{#1\right\}} % set brace notation
+\newcommand{\spectuple}[1]{\tuple{#1, constructor, queries, commands}}
 \newcommand{\ssep}{\mid} % separator of set builder
 \newcommand{\tuple}[1]{\langle #1 \rangle}
 
@@ -105,9 +108,11 @@ Traditionally, implementations provided by programming languages support the fol
 
 \begin{specification}[Sequence]
     \begin{align*}
-    &\forall V: \mathsf{Value} \ \forall S: \mathsf{Sequence} \tuple{V}\\
+    &\forall V: \mathsf{Value} \ \forall S: \mathsf{Sequence} \tuple{V} \cdot \spectuple{S}\\
     &S = \mathlist{v}{V}\\
     &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty sequence}\\
+    &queries = \set{length, get}\\
+    &commands = \set{insert, remove}\\
     &\fnspec{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
     &\fnspec{get}{\set{s \in S} \times \set{ n \inbb{N} \ssep n < length(s) } \to V}{Returns the value from the sequence $s$ at the index $n$}\\
     &\fnspec{insert}{\set{s \in S} \times \set{ n \inbb{N} \ssep n < length(s) } \times V \to S}{Inserts the given value into the sequence $s$ at the index $n$ and ... }\\ % returns the updated sequence}\\
@@ -214,9 +219,11 @@ To define $positions$ meeting these properties, Logoot first introduces \emph{Lo
 
 \begin{specification}[LogootTuple]
     \begin{align*}
-    &\forall T: \mathsf{LogootTuple}\\
-    &T = \tuple{priority \inbb{N}, id_{site} \inbb{I}, seq_{site} \inbb{N}}\\
+    &\forall T: \mathsf{LogootTuple} \cdot \spectuple{T}\\
+    &T = \tuple{\mathbb{N}, \mathbb{I}, \mathbb{N}}\\
     &\fnspec{constructor}{\mathbb{N} \times \mathbb{I} \times \mathbb{N} \to T}{Returns a LogootTuple made of the given $priority$, $id_{site}$ and $seq_{site}$}\\
+    &\queries{priority, peer, seq}\\
+    &\commands{}\\
     &\fnspec{priority}{T \to \mathbb{N}}{Returns the $priority$ of the given tuple}\\
     &\fnspec{peer}{T \to \mathbb{I}}{Returns the $id_{site}$ of the given tuple}\\
     &\fnspec{seq}{T \to \mathbb{N}}{Returns the $seq_{site}$ of the given tuple}
@@ -228,9 +235,11 @@ Based on this building block, Logoot defines positions as sequences of \emph{Log
 
 \begin{specification}[LogootPos]
     \begin{align*}
-    &\forall T: \mathsf{LogootTuple} \ \forall P: \mathsf{LogootPos}\\
+    &\forall T: \mathsf{LogootTuple} \ \forall P: \mathsf{LogootPos} \cdot \spectuple{P}\\
     &P = \mathlist{t}{T}\\
     &\fnspec{constructor}{\mathlist{t}{T} \to P}{Returns a LogootPos made of the given tuples}\\
+    &\queries{length, get, lastTuple, peer, seq, uid}\\
+    &\commands{}\\
     &\fnspec{length}{P \to \mathbb{N}}{Returns the number of tuples composing the position}\\
     &\fnspec{get}{\set{p \in P} \times \set{n \inbb{N} \ssep n < length(p)} \to T}{Returns the n-th tuple of the given position}\\
     &\fnspec{lastTuple}{P \to T}{Returns the last tuple of the given position}\\
@@ -263,14 +272,16 @@ Relying on these positions, Logoot proposes a new specification corresponding to
 
 \begin{specification}[LogootSeq]
     \begin{align*}
-    &\forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSeq} \tuple{V}\\
-    &S = \set{\tuple{p: \mathsf{LogootPos}, v: \mathsf{Value}}_i}_{i \inbb{N}}\\
+    &\forall P: LogootPos \ \forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSeq} \tuple{V} \cdot \spectuple{S}\\
+    &S = \set{\tuple{p: \mathsf{P}, v: \mathsf{V}}_i}_{i \inbb{N}}\\
     &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty Logoot sequence}\\
+    &\queries{length, getPos, generatePos}\\
+    &\commands{insert, remove}\\
     &\fnspec{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
-    &\fnspec{getPos}{\set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to LogootPos}{Returns ...}\\
-    &\fnspec{generatePos}{\mathbb{I} \times \mathbb{N} \times \set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to LogootPos}{Returns ...}\\
-    &\fnspec{insert}{S \times LogootPos \times V \to S}{Inserts the given value into the sequence using its position and returns...}\\
-    &\fnspec{remove}{S \times LogootPos \to S}{Removes the value from the sequence attached to the given position and returns...}
+    &\fnspec{getPos}{\set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to P}{Returns ...}\\
+    &\fnspec{generatePos}{\mathbb{I} \times \mathbb{N} \times \set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to P}{Returns ...}\\
+    &\fnspec{insert}{S \times P \times V \to S}{Inserts the given value into the sequence using its position and returns...}\\
+    &\fnspec{remove}{S \times P \to S}{Removes the value from the sequence attached to the given position and returns...}
     \end{align*}
     \label{spec:logoot-seq}
 \end{specification}
