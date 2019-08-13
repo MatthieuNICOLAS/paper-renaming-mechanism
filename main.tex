@@ -297,60 +297,119 @@ Using this data type, we can replay the previous scenario while this time ensuri
 
 \subsection{LogootSplit \cite{AndreCollaborateCom2013}}
 
+LogootSplit is a Block-wise Densely-identified Operation-based Sequence \ac{CRDT}.
+Proposed by \textcite{AndreCollaborateCom2013}, its goal is to improve further the efficiency of the replicated sequence.
+
+Indeed, it is expensive to generate and associate a new position to each value of the sequence.
+To reduce the metadata overhead, the authors propose to aggregate dynamically values into blocks.
+By regrouping values into blocks, LogootSplit can assign logically a position to each value, while effectively storing only the position of the first value of each block.
+This shifts the cause of metadata growth from the number of values to the number of blocks.
+As a block can contains an arbitrary number of values, it can lead to a significant increase of the efficiency of the data structure.
+
+To achieve this, LogootSplit adds a new component to the tuples composing its positions, the $offset$.
+This component allows to specify the offset of a value into a block.
+According to this change, LogootSplit redefines the tuples that it uses as well as the positions, as shown respectively in \autoref{spec:logootsplit-tuple} and \autoref{spec:logootsplit-pos}.
+
+\mnnote{J'aurai bien aimé avoir une abstraction unique pour les Tuples et Positions de Logoot et LogootSplit plutôt que de les redéfinir ici, mais je n'ai pas réussi à la formaliser pour le moment.}
+
+\begin{specification}[LogootSplitTuple]
+    \begin{align*}
+    &\forall T: \mathsf{LogootSplitTuple} \cdot \spectuple{T}\\
+    &T = \tuple{priority \inbb{N}, id_{site} \inbb{I}, seq_{site} \inbb{N}, offset \inbb{N}} \cdot\\
+    &\fnspec{constructor}{\mathbb{N} \times \mathbb{I} \times \mathbb{N} \times \mathbb{N} \to T}{Returns a LogootSplitTuple made of the given $priority$, $id_{site}$, $seq_{site}$ and $offset$}\\
+    &\queries{priority, peer, seq, offset}\\
+    &\commands{}\\
+    &\fnspec{priority}{T \to \mathbb{N}}{Returns the $priority$ of the given tuple}\\
+    &\fnspec{peer}{T \to \mathbb{I}}{Returns the $id_{site}$ of the given tuple}\\
+    &\fnspec{seq}{T \to \mathbb{N}}{Returns the $seq_{site}$ of the given tuple}\\
+    &\fnspec{offset}{T \to \mathbb{N}}{Returns the $offset$ of the given tuple}
+    \end{align*}
+    \label{spec:logootsplit-tuple}
+\end{specification}
+
+\begin{specification}[LogootSplitPos]
+    \begin{align*}
+    &\forall T: \mathsf{LogootSplitTuple} \ \forall P: \mathsf{LogootSplitPos} \cdot \spectuple{P}\\
+    &P = \mathlist{t}{T}\\
+    &\fnspec{constructor}{\mathlist{t}{T} \to P}{Returns a LogootSplitPos made of the given tuples}\\
+    &\queries{length, get, lastTuple, peer, seq, offset, uid}\\
+    &\commands{fromBase, concat, truncate}\\
+    &\fnspec{length}{P \to \mathbb{N}}{Returns the number of tuples composing the position}\\
+    &\fnspec{get}{\set{p \in P} \times \set{n \inbb{N} \ssep n < length(p)} \to T}{Returns the n-th tuple of the given position}\\
+    &\fnspec{lastTuple}{P \to T}{Returns the last tuple of the given position}\\
+    &\fnspec{peer}{P \to \mathbb{I}}{Returns the $id_{site}$ of the last tuple of the given position}\\
+    &\fnspec{seq}{P \to \mathbb{N}}{Returns the $seq_{site}$ of the last tuple of the given position}\\
+    &\fnspec{offset}{P \to \mathbb{N}}{Returns the $offset$ of the last tuple of the given position}\\
+    &\fnspec{uid}{P \to \tuple{\mathbb{I}, \mathbb{N}, \mathbb{N}}}{Returns the unique id of the given position}\\
+    &\fnspec{fromBase}{P \times \mathbb{N} \to P}{Returns a new position made by copying the given position and replacing its offset...}\\
+    &\fnspec{concat}{P \times P \to P}{Returns a new position made by concatenating tuples from both given positions}\\
+    &\fnspec{truncate}{P \times \mathbb{N} \to P \times P}{Returns a new position made by concatenating tuples from both given positions}
+    \end{align*}
+    \label{spec:logootsplit-pos}
+\end{specification}
+
+Based on its specification of positions, LogootSplit defines the aggregability of positions as follow:
+
+\begin{definition}[Base of a Position]
+    The base of a position corresponds to the position deprived of the offset of its last tuple.
+\end{definition}
+
+\begin{definition}[Positions Aggregability]
+    Two positions are aggregable into a block if they share the same base and if their respective offsets are consecutives.
+\end{definition}
+
+This rule to aggregate positions into blocks results into the following specification of the later.
+A block is composed of a position corresponding to the position of its first value, and of the offset of its last value.
+LogootSplit can then compute the position of each value of the block by replacing the offset of the first position of the block by the offset of the value.
+
+\begin{specification}[LogootSplitBlock]
+    \begin{align*}
+    &\forall P: \mathsf{LogootSplitPos} \ \forall B: \mathsf{LogootSplitBlock} \cdot \spectuple{B}\\
+    &B = \tuple{\set{p \in P}, \set{n \inbb{N} \ssep offset(p) \leq n}}\\
+    &\fnspec{constructor}{P \times \mathbb{N} \to I}{Returns a LogootSplitBlock...}\\
+    &\queries{posBegin, posEnd, begin, end, peer, seq, uid}\\
+    &\commands{}\\
+    &\fnspec{posBegin}{B \to P}{Returns the first position of the block}\\
+    &\fnspec{posEnd}{B \to P}{Returns the last position of the block}\\
+    &\fnspec{begin}{B \to \mathbb{N}}{Returns the offset of posBegin}\\
+    &\fnspec{end}{B \to \mathbb{N}}{Returns the offset of posEnd}\\
+    &\fnspec{peer}{B \to \mathbb{I}}{Returns the peer of the positions of the given block}\\
+    &\fnspec{seq}{B \to \mathbb{N}}{Returns the sequence number of the positions of the given block}\\
+    &\fnspec{uid}{I \to \tuple{\mathbb{I}, \mathbb{N}}}{Returns the unique id of the given block}
+    \end{align*}
+    \label{spec:logootsplit-block}
+\end{specification}
+
+It is interesting to notice that, in the context of LogootSplit:
 \begin{itemize}
-    \item Block-wise Sequence \acp{CRDT}
-    \item Goal is to improve further the performances of Logoot
-    \item It is expensive to generate and associate a position to each element of the sequence
-    \item \textcite{AndreCollaborateCom2013} proposes to aggregate dynamically elements into blocks
-    \item It allows to reduce the metadata per element as we only need to store a $position \ interval$ for a block, independently of how many elements it contains
-    \item To do so, add a new component to positions tuples: the $offset$ \mnnote{NOTE: Préciser que $offset$ doit appartenir à un ensemble énumérable, de façon à ce que l'on puisse déterminer son prédecesseur, successeur ou si une valeur est manquante ?}
-    \item LogootSplit $positions$ are thus composed of one or several of the following tuples:
-
-    \begin{center}
-        $\tuple{priority, id_{site}, seq_{site}, offset}$
-    \end{center}
-
-    \item Define positions as aggregable if all components but the $offsets$ of their last tuple are identical and if their respective $offsets$ are consecutive
-    \item Define $position \ interval$ as the following couple:
-
-    \begin{center}
-        $\tuple{posBegin, end}$
-    \end{center}
-
-    where:
-
-    \begin{itemize}
-        \item $posBegin$ refers to the first position of the interval
-        \item $end$ refers to the value of the offset of the last position of the interval
-    \end{itemize}
-
-    \item Given these two values, we are able to recreate all positions from the interval if needed
-    \item It is worth to notice that
-    \begin{itemize}
-        \item The uniqueness of a LogootSplit position is ensured by the triple $\tuple{id_{site}, seq_{site}, offset}$
-        \item As such, an $offset$ can not be used twice for the same block
-        \item It is then necessary to prevent such a case from happening when a node prepend or append a new element to an existing block
-        \item It can be achieved by keeping track of used $offset$ per block
-        \begin{itemize}
-            \item To be more precise, only need to keep track of the minimum and maximum $offsets$ ever used for this block
-        \end{itemize}
-    \end{itemize}
-
-    \item Updates the definition of the operations $insert$ and $remove$ to make them block-wise
-    \begin{itemize}
-        \item $insert(S, pos, elts) = S'$ inserts into the sequence $S$ the values $elts$ from the position $pos$. Returns the updated sequence $S'$
-        \item $remove(S, posIntervals) = S'$ removes from the sequence $S$ the values with their position contained in one of the interval of $posIntervals$ and returns the updated sequence $S'$
-    \end{itemize}
-    \item Also introduce the following function:
-    \begin{itemize}
-        \item $getPosIntervals(S, index, length) = posIntervals$ retrieves the list of $position \ intervals$  at the index $index$ in the current sequence $S$
-    \end{itemize}
+    \item Given a position $p$, the triple $\tuple{peer(p), seq(p), offset(p)}$ identifies uniquely this position.
+    \item Given a block $b$, the couple $\tuple{peer(b), seq(b)}$ identifies uniquely the base of its positions.
+    \item Given a block $b$, the quadruple $\tuple{peer(b), seq(b), begin(b), end(b)}$ identifies uniquely this block.
 \end{itemize}
+
+LogootSplit proposes a new specification of the replicated sequence illustrated in \autoref{spec:logootsplit-seq}, supporting string-wise operations. An example of its behavior is shown in \autoref{fig:logootsplit-example}.
+
+\begin{specification}[LogootSplitSeq]
+    \begin{align*}
+    &\forall P: LogootSplitPos \ \forall B: LogootSplitBlock \ \forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSplitSeq} \tuple{V} \cdot \spectuple{S}\\
+    &S = \set{\tuple{b: \mathsf{B}, \set{v_j: \mathsf{V}}_{j \inbb {N}}}_i}_{i \inbb{N}}\\
+    &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty LogootSplit sequence}\\
+    &\queries{length, getBlocks, generatePos}\\
+    &\commands{insert, remove}\\
+    &\fnspec{length}{S \to \mathbb{N}}{Returns the number of values contained in the sequence}\\
+    &\fnspec{getBlocks}{\set{s \in S} \times \set{n_1 \inbb{N} \ssep n_1 < length(S)} \times \set{n_2 \inbb{N} \ssep n_1 \leq n_2 < length(S))} \to \mathlist{b}{B}}{...}\\
+    &\fnspec{generatePos}{\mathbb{I} \times \mathbb{N} \times \set{s \in S} \times \set{n \inbb{N} \ssep n < length(S)} \to P}{Returns ...}\\
+    &\fnspec{insert}{S \times P \times \mathlist{v}{V} \to S}{Inserts the given values into the sequence using its position and returns...}\\
+    &\fnspec{remove}{S \times \mathlist{b}{B} \to S}{Removes the values from the sequence attached to the given position...}
+    \end{align*}
+    \label{spec:logootsplit-seq}
+\end{specification}
 
 \begin{figure}
     \centering
         \includegraphics[width=0.6\textwidth]{img/logootsplit-seq.pdf}
     \caption{An example of replicated sequence using LogootSplit}
+    \label{fig:logootsplit-example}
 \end{figure}
 
 \subsection{Limits}
