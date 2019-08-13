@@ -11,6 +11,8 @@
 \usepackage[inline]{enumitem} % \begin{enumerate*} \end{enumerate*}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath} % \begin{align*}
+\newcommand{\removespacebelowalign}[0]{ \setlength{\belowdisplayskip}{-10pt} \setlength{\belowdisplayshortskip}{-10pt}}
+
 \usepackage{amssymb} % \nexists
 
 \newcommand{\commands}[1]{commands = \set{#1}}
@@ -86,6 +88,7 @@
 \addbibresource{ref.bib}
 
 \begin{document}
+\removespacebelowalign
 
 \title{Improving Replicated Sequences Performances}
 \author{Matthieu Nicolas}
