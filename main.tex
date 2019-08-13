@@ -289,7 +289,17 @@ Relying on these positions, Logoot proposes a new specification corresponding to
     \label{spec:logoot-seq}
 \end{specification}
 
-Using this data type, we can replay the previous scenario while this time ensuring the correctness and convergence of the final states as illustrated in \autoref{fig:logoot-seq-convergence}. Thanks to positions, nodes are able to insert the new value between the right other values and to remove the intended value correctly.
+Using this data type, we can replay the previous scenario while this time ensuring the correctness and convergence of the final states as illustrated in \autoref{fig:logoot-seq-convergence}.
+
+In this scenario, node A wants to insert the value "b" between the values "a" and "c".
+To this end, it generates and attaches to "b" a position greater than the position of "a", but lesser than the position of "c".
+As there is plenty of room between these two positions, node A is able to generate a position of the same size embodying the intended order.
+It that was not the case, node A would have to generate a position by reusing the tuple of "a" and appending to it its own tuple, resulting in a longer position.
+
+Meanwhile, node B wants to remove the value "x" from the sequence.
+To do so, it uses the position attached to this value which identifies it uniquely.
+
+\mnnote{TODO: Trouver comment conclure cet exemple}
 
 \begin{figure}
     \centering
@@ -297,6 +307,8 @@ Using this data type, we can replay the previous scenario while this time ensuri
     \caption{The previous scenario fixed using Logoot positions instead of indexes}
     \label{fig:logoot-seq-convergence}
 \end{figure}
+
+\mnnote{TODO: Changer la figure pour utiliser des naturels comme priority, histoire d'être cohérent avec la spécification}
 
 \subsection{LogootSplit \cite{AndreCollaborateCom2013}}
 
@@ -318,7 +330,7 @@ According to this change, LogootSplit redefines the tuples that it uses as well 
 \begin{specification}[LogootSplitTuple]
     \begin{align*}
     &\forall T: \mathsf{LogootSplitTuple} \cdot \spectuple{T}\\
-    &T = \tuple{priority \inbb{N}, id_{site} \inbb{I}, seq_{site} \inbb{N}, offset \inbb{N}} \cdot\\
+    &T = \tuple{\mathbb{N}, \mathbb{I}, \mathbb{N}, \mathbb{N}}\\
     &\fnspec{constructor}{\mathbb{N} \times \mathbb{I} \times \mathbb{N} \times \mathbb{N} \to T}{Returns a LogootSplitTuple made of the given $priority$, $id_{site}$, $seq_{site}$ and $offset$}\\
     &\queries{priority, peer, seq, offset}\\
     &\commands{}\\
