@@ -170,7 +170,7 @@ In this paper, we focus on Densely-identified Operation-based Sequence \acp{CRDT
 
 \subsection{Logoot \cite{WeissICDCS09}}
 
-Logoot is a Element-wise Densely-identified Operation-based Sequence \ac{CRDT}.
+Logoot is an Element-wise Densely-identified Operation-based Sequence \ac{CRDT}.
 Its key insight is to replace the use of mutable $indexes$ to refer to values into the sequence with immutable $positions$.
 As illustrated previously in \autoref{fig:basic-seq-divergence}, in the case of traditional sequences, operations update the sequence and shift values, resulting in inconsistencies when applying several concurrent operations.
 By using immutable $positions$ to refer to values, Logoot is able to define a sequence with commutative operations, suited for usages in distributed settings.
@@ -286,7 +286,7 @@ Relying on these positions, Logoot proposes a new specification corresponding to
     \label{spec:logoot-seq}
 \end{specification}
 
-Using this data type, we can replay the previous scenario while this time ensuring the correctness and convergence of the final states as illustrated in \autoref{fig:logoot-seq-convergence}. Thanks to positions, nodes are able to insert the value at the correct place and to remove the intended value correctly.
+Using this data type, we can replay the previous scenario while this time ensuring the correctness and convergence of the final states as illustrated in \autoref{fig:logoot-seq-convergence}. Thanks to positions, nodes are able to insert the new value between the right other values and to remove the intended value correctly.
 
 \begin{figure}
     \centering
