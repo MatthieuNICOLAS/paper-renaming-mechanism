@@ -37,9 +37,10 @@
 \theoremstyle{definition}
 \newtheorem{note}[note-counter]{Note}
 
-\newcounter{property-counter}
+\newcounter{propertycounter}
 \theoremstyle{definition}
-\newtheorem{property}[property-counter]{Property}
+\newtheorem{property}[propertycounter]{Property}
+\def\propertycounterautorefname{Property}
 
 \newcounter{specificationcounter}
 \theoremstyle{definition}
@@ -165,9 +166,9 @@ To solve conflicts deterministically and ensure the convergence of all nodes, \a
 In the context of Sequence \acp{CRDT}, two different approaches were proposed, each trying to minimize the overhead introduced.
 The first one affixes constant-sized identifiers to each value in the sequence and uses them to represent the sequence as a linked list.
 The downside of this approach is an evergrowing overhead, as it needs to keep removed values to deal with potential concurrent updates, effectively turning them into tombstones.
-The second one avoids the need of tombstones by instead attaching dense identifiers to values.
+The second one avoids the need of tombstones by instead attaching densely-ordered identifiers to values.
 It is then able to order values into the sequence by comparing their respective identifiers.
-However this approach also suffers from an increasing overhead, as the size of such dense identifiers is variable and grows over time.
+However this approach also suffers from an increasing overhead, as the size of such densely-ordered identifiers is variable and grows over time.
 
 In this paper, we focus on Densely-identified Operation-based Sequence \acp{CRDT} and propose a renaming mechanism to reduce the metadata overhead introduced by this approach.
 
@@ -376,14 +377,18 @@ Based on its specification of positions, LogootSplit defines the aggregability o
 This rule to aggregate positions into blocks results into the following specification of the later.
 A block is composed of a position corresponding to the position of its first value, and of the offset of its last value.
 LogootSplit can then compute the position of each value of the block by replacing the offset of the first position of the block by the offset of the value.
+When inserting a new value into the sequence, LogootSplit first seeks to append or to prepend it respectively to the preceding block or to the succeeding one.
+If it is not possible, LogootSplit generates and inserts a new block at the intended place.
+To ensure that the positions comply with \autoref{prop:timeless-unicity}, LogootSplit keeps track of the used offsets per block to not reassign the same position to different values.
 
 \begin{specification}[LogootSplitBlock]
     \begin{align*}
     &\forall P: \mathsf{LogootSplitPos} \ \forall B: \mathsf{LogootSplitBlock} \cdot \spectuple{B}\\
     &B = \tuple{\set{p \in P}, \set{n \inbb{N} \ssep offset(p) \leq n}}\\
     &\fnspec{constructor}{P \times \mathbb{N} \to I}{Returns a LogootSplitBlock...}\\
-    &\queries{posBegin, posEnd, begin, end, peer, seq, uid}\\
+    &\queries{length, posBegin, posEnd, begin, end, peer, seq, uid}\\
     &\commands{}\\
+    &\fnspec{length}{B \to \mathbb{N}}{Returns the number of values of the block}\\
     &\fnspec{posBegin}{B \to P}{Returns the first position of the block}\\
     &\fnspec{posEnd}{B \to P}{Returns the last position of the block}\\
     &\fnspec{begin}{B \to \mathbb{N}}{Returns the offset of posBegin}\\
@@ -426,6 +431,8 @@ LogootSplit proposes a new specification of the replicated sequence illustrated 
     \caption{An example of replicated sequence using LogootSplit}
     \label{fig:logootsplit-example}
 \end{figure}
+
+\mnnote{TODO: Finalement, j'aurai tendance à fusionner les sections sur Logoot et LogootSplit pour ne garder que LogootSplit. Dans un premier temps, je peux introduire la notion de position en ne tenant pas compte de offset (ça m'embête juste de mettre l'exemple \autoref{fig:logoot-seq-convergence}, réadapté pour LogootSplit, sans avoir mis la spécification de la séquence au préalable). Puis je peux motiver le fait de regrouper les valeurs par blocs pour réduire l'overhead, expliquer le rôle de offset et remettre l'exemple \autoref{fig:logootsplit-example}.}
 
 \subsection{Limits}
 
