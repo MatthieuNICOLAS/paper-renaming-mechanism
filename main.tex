@@ -463,18 +463,16 @@ In this paper, we present a work corresponding to the later approach.
 
 \section{Overview}
 
-\begin{itemize}
-    \item We build up on top of LogootSplit
-    \item To address its limitations, we introduce a renaming mechanism
-    \item The purpose of this mechanism is to reassign shorter positions to each element such as all of them can be aggregated into one unique block
-    \item This allows to reduce the metadata per element, the computation time required to apply next updates and also the bandwidth used to broadcast future updates
-    \item \mnnote{TODO: Expliquer que toutefois le mécanisme de renommage ajoute un coût et qu'on cherche à le minimiser. Mais j'ai du mal à voir comment introduire la notion de cet overhead sans rentrer dans les détails qui en sont la source (règles de réécriture, arborescence des epochs, transformation des opérations concurrentes), que je préférerais introduire un par un dans la suite du papier}
-    \item For simplicity purposes, will first present the renaming mechanism in the context of a centralised system, with only one node able to trigger the renaming mechanism
-    \begin{itemize}
-        \item Will describe the functioning of this initial version and discuss its limitations
-    \end{itemize}
-    \item Will then present a more elaborated version of the renaming mechanism, overcoming the limitations of the centralised version and allowing its use in a distributed setting
-\end{itemize}
+We propose a new Densely-identified Operation-based Sequence \ac{CRDT}: \emph{RenamableLogootSplit}.
+
+To address the limitations of LogootSplit, we embed in this data structure a renaming mechanism.
+The purpose of this mechanism is to reassign shorter positions to values in such a manner that we are then able to aggregate them into one unique block.
+This allows to reduce the bandwidth used to broadcast future updates as well as the metadata of the whole sequence.
+However, as the goal is to reduce LogootSplit's evergrowing memory overhead and bandwidth consumption, we have to design the renaming mechanism while minimizing its own footprint.
+
+For simplicity purposes, we present first RenamableLogootSplit under the assumption that no concurrent renamings can take place.
+This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
+We then present the complete version of RenamableLogootSplit, with the additional components required to be able to deal with concurrent renamings.
 
 \section{Renaming in a centralised setting}
 
