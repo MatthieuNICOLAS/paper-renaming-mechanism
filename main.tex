@@ -439,32 +439,27 @@ LogootSplit proposes a new specification of the replicated sequence illustrated 
 
 \subsection{Limits}
 
-\begin{itemize}
-    \item As shown previously, LogootSplit positions' size is not bounded in order to comply with the dense constraint.
-    \item As more elements are added to the sequence, less positions of the minimum size are available to insert new elements while respecting the intended order.
-    \item Thus the size of new positions tends to grow as the lifetime of the replicated sequence increases.
-    \item However, the growth of the size of positions impacts negatively the performances of the application on several aspects.
-    \begin{itemize}
-        \item As positions attached to elements become longer, the memory overhead of the data structure increases accordingly.
-        \item This also results in an increase of the bandwidth consumption, as positions have to be broadcast between nodes.
-        \item Also, operations needs to compare positions, either to look for the deleted positions or to find the place to insert the ones. The longer the positions are, the slower is the processing of operations.
-    \end{itemize}
-    \item Additionally, the number of blocks composing the sequence tends to growth as well.
-    \item It is not always possible to add newly inserted positions to existing blocks because of the rules on the generation of positions and on their aggregability.
-    \item This results in the addition of new blocks to the sequence.
-    \item As no mechanism to merge blocks a posteriori is provided, the resulting sequence ends up being fragmented into many blocks.
-    \item This degrades as well the performances of the application, as the number of blocks increases the memory overhead of the data structure and the computation time required to browse the sequence.
-    \item \mnnote{
-        TODO: Illustrer ces baisses d'efficacité à l'aide de mesures :
-        \\
-        - Un graphe sur l'évolution du poids de la séquence par rapport au nombre d'éléments contenus en fonction du nombre d'opérations jouées préalablement
-        \\
-        - Un graphe sur l'évolution du temps de traitement d'une opération par rapport au nombre d'éléments contenus en fonction du nombre d'opérations jouées préalablement
-    }
-    \item It is thus necessary to either propose a more efficient specification of the replicated list, with a reduced growth of the overhead
-    \item ... or to provide a mechanism allowing to reset the overhead of the data structure at times.
-    \item The work introduced in this paper corresponds to the later approach.
-\end{itemize}
+As shown previously, the size of positions in Densely-identified Sequence \acp{CRDT} is not bounded in order to comply with the dense set constraint (\autoref{prop:dense-set}).
+As more values are added to the sequence, the size of new positions grows to be able represent the intended order between values.
+However, this growth impacts negatively the performances of the data structure on several aspects.
+Since positions attached to values become longer, the memory overhead of the data structure increases accordingly.
+This also results in an increase of the bandwidth consumption as nodes have to broadcast positions to others.
+
+Additionally, as the lifetime of the replicated sequence increases, the number of blocks composing it grows as well.
+Because of the constraints on the generation of positions and their aggregability, it is not always possible to append or prepend new values to existing blocks.
+This results in the addition of new blocks to the sequence.
+Since no mechanism to merge blocks a posteriori is provided, the resulting sequence ends up being fragmented into many blocks.
+The efficiency of the data structure decreases as each block introduces its own metadata overhead.
+
+\mnnote{TODO: Illustrer l'augmentation de l'overhead avec un graphe.}
+
+\mnnote{TODO: Ajouter aussi des métriques sur l'évolution de la taille des identifiants, du nombre de blocs ?}
+
+\mnnote{TODO: Ajouter une phrase sur le fait qu'on se retrouve avec une séquence répliquée jusqu'à 100x plus lourde que la séquence équivalente non-répliquée. Cette mesure pose cependant un problème : elle repose sur notre implémentation actuelle de LogootSplit qui ne réutilise pas la même instance d'un tuple partagé par plusieurs identifiants. L'utilisation d'un pattern Multiton résoudrait ce problème et limiterait le poids de la structure de données et donc le résultat des mesures (mais ajouterait une complexité supplémentaire qui serait de traquer quand on peut GC un tuple).}
+
+It is thus necessary to either propose a more efficient specification of the replicated list, with a reduced growth of the overhead
+or to provide a mechanism allowing to reset the overhead of the data structure at times.
+In this paper, we present a work corresponding to the later approach.
 
 \section{Overview}
 
