@@ -372,9 +372,12 @@ Based on its specification of positions, LogootSplit defines the aggregability o
 
 \begin{definition}[Positions Aggregability]
     Two positions are aggregable into a block if they share the same base and if their respective offsets are consecutives.
+    It implies that a given block can contain only values inserted by the same node, as the positions have to share the same base thus the same peer.
 \end{definition}
 
-This rule to aggregate positions into blocks results into the following specification of the later.
+\mnnote{FIXME: je ne savais pas où insérer l'highlight sur le fait que les valeurs d'un bloc doivent avoir été insérées par le même noeud donc je l'ai mis dans la définition. À bouger?}
+
+This rule to aggregate positions into blocks results into their following specification.
 A block is composed of a position corresponding to the position of its first value, and of the offset of its last value.
 LogootSplit can then compute the position of each value of the block by replacing the offset of the first position of the block by the offset of the value.
 When inserting a new value into the sequence, LogootSplit first seeks to append or to prepend it respectively to the preceding block or to the succeeding one.
