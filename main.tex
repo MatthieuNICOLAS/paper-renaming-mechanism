@@ -477,38 +477,21 @@ The purpose of this mechanism is to reassign shorter positions to values in such
 This allows to reduce the bandwidth used to broadcast future updates as well as the metadata of the whole sequence.
 However, as the goal is to reduce LogootSplit's evergrowing memory overhead and bandwidth consumption, we have to design the renaming mechanism while minimizing its own footprint.
 
-For simplicity purposes, we present first RenamableLogootSplit under the assumption that no concurrent renamings can take place.
-This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
-We then present the complete version of RenamableLogootSplit, with the additional components required to be able to deal with concurrent renamings.
-
-\section{Renaming in a centralised setting}
-
 \subsection{System Model}
 
-\mnnote{NOTE: Ça me paraît correct mais confusant de parler d'un système centralisé pour un système P2P où seulement une fonctionnalité (le renommage) n'est disponible que pour un noeud particulier. Voir pour mieux présenter cet aspect}
+The system is composed of a dynamic set of nodes, as nodes join and leave dynamically the collaboration during its lifetime.
+Each node has a unique identifier from a set $\mathbb{I}$.
+The nodes collaborate to build and maintain a sequence using RenamableLogootSplit.
+Each node owns a copy of the sequence and edit it without any kind of coordination with others.
 
-\begin{itemize}
-    \item Peer-to-peer network
-    \begin{itemize}
-        \item Nodes join and leave dynamically
-    \end{itemize}
-    \item Nodes build and maintain a sequence collaboratively using LogootSplit
-    \begin{itemize}
-        \item Each node owns a copy of the sequence and can edit it without any kind of coordination with others
-    \end{itemize}
-    \item The network is unreliable
-    \begin{itemize}
-        \item Messages can be lost, re-ordered and delivered multiple times
-    \end{itemize}
-    \item To overcome the faults of the network, a message-passing layer is used to deliver messages to the application exactly-once, in the correct order
-    \begin{itemize}
-        \item At each node, the insertion of a position happens before its removal
-    \end{itemize}
-    \item An anti-entropy mechanism is used by nodes to synchronise in a pairwise manner, by detecting and re-exchanging lost messages
-
-    \item One node is arbitrarily designed as the leader
-    \item This node only is able to trigger renamings
-\end{itemize}
+However, the network is unreliable.
+Messages can be lost, re-ordered or delivered multiple times.
+The network is also vulnerable to partitions, which split nodes into disjoined subgroups.
+To overcome the failures of the network, nodes rely on a message-passing layer.
+As RenamableLogootSplit is built on top of LogootSplit, it shares the same requirements for the operation delivery.
+This layer is thus used to deliver messages to the application exactly-once.
+The layer also ensures that \emph{remove} operations are delivered after corresponding \emph{insert} operations.
+Nodes use an anti-entropy mechanism to synchronise in a pairwise manner, by detecting and re-exchanging lost operations.
 
 \subsection{Specification}
 
@@ -527,7 +510,7 @@ We then present the complete version of RenamableLogootSplit, with the additiona
         \item Each position is unique. Thus a $rename$ operation should not associate several positions to the same resulting one. To put it in a more formal way, the $rename$ operation must be designed such as:
 
         \begin{center}
-            $\nexists p1, p2 \in Pos \cdot rename(p1) = rename(p2)$
+            $\forall p1, p2 \in Pos \land p1 \neq p2 \cdot rename(p1) \neq rename(p2)$
         \end{center}
 
         \item The sequence must be sorted with regards to the positions. The existing order between initial positions must then be preserved by the $rename$ operation. It results in the following property :
@@ -547,6 +530,12 @@ We then present the complete version of RenamableLogootSplit, with the additiona
         \end{itemize}
     \end{itemize}
 \end{itemize}
+
+For simplicity purposes, we present first RenamableLogootSplit under the assumption that no concurrent renamings can take place.
+This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
+We then present the complete version of RenamableLogootSplit, with the additional components required to deal with concurrent renamings.
+
+\section{Renaming in a centralised setting}
 
 \subsection{Proposition}
 
