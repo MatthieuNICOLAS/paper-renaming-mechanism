@@ -16,9 +16,10 @@
 \usepackage{amssymb} % \nexists
 
 \newcommand{\commands}[1]{commands = \set{#1}}
+\newcommand{\defeq}{\overset{\underset{\mathrm{def}}{}}{=}}
 \newcommand{\fnspec}[3]{#1: #2 \text{ : #3}}
 \newcommand{\inbb}[1]{\in \mathbb{#1}}
-\newcommand{\mathlist}[2]{\set{#1_i: #2}_{i \inbb{N}}}
+\newcommand{\mathlist}[2]{\set{#1_i \in #2}_{i \inbb{N}}}
 \newcommand{\queries}[1]{queries = \set{#1}}
 \newcommand{\set}[1]{\left\{#1\right\}} % set brace notation
 \newcommand{\spectuple}[1]{\tuple{#1, constructor, queries, commands}}
@@ -113,7 +114,7 @@ Traditionally, implementations provided by programming languages support the fol
 \begin{specification}[Sequence]
     \begin{align*}
     &\forall V: \mathsf{Value} \ \forall S: \mathsf{Sequence} \tuple{V} \cdot \spectuple{S}\\
-    &S = \mathlist{v}{V}\\
+    &S \defeq \mathlist{v}{V}\\
     &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty sequence}\\
     &queries = \set{length, get}\\
     &commands = \set{insert, remove}\\
@@ -223,8 +224,8 @@ To define $positions$ meeting these properties, Logoot first introduces \emph{Lo
 
 \begin{specification}[LogootTuple]
     \begin{align*}
-    &\forall T: \mathsf{LogootTuple} \cdot \spectuple{T}\\
-    &T = \tuple{\mathbb{N}, \mathbb{I}, \mathbb{N}}\\
+    &T: \mathsf{LogootTuple} \cdot \spectuple{T}\\
+    &T \defeq \tuple{\mathbb{N}, \mathbb{I}, \mathbb{N}}\\
     &\fnspec{constructor}{\mathbb{N} \times \mathbb{I} \times \mathbb{N} \to T}{Returns a LogootTuple made of the given $priority$, $id_{site}$ and $seq_{site}$}\\
     &\queries{priority, peer, seq}\\
     &\commands{}\\
@@ -239,8 +240,9 @@ Based on this building block, Logoot defines positions as sequences of \emph{Log
 
 \begin{specification}[LogootPos]
     \begin{align*}
-    &\forall T: \mathsf{LogootTuple} \ \forall P: \mathsf{LogootPos} \cdot \spectuple{P}\\
-    &P = \mathlist{t}{T}\\
+    &P: \mathsf{LogootPos} \cdot \spectuple{P}\\
+    &T: \mathsf{LogootTuple}\\
+    &P \defeq \mathlist{t}{T}\\
     &\fnspec{constructor}{\mathlist{t}{T} \to P}{Returns a LogootPos made of the given tuples}\\
     &\queries{length, get, lastTuple, peer, seq, uid}\\
     &\commands{}\\
@@ -276,8 +278,9 @@ Relying on these positions, Logoot proposes a new specification corresponding to
 
 \begin{specification}[LogootSeq]
     \begin{align*}
-    &\forall P: LogootPos \ \forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSeq} \tuple{V} \cdot \spectuple{S}\\
-    &S = \set{\tuple{p: \mathsf{P}, v: \mathsf{V}}_i}_{i \inbb{N}}\\
+    &\forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSeq} \tuple{V} \cdot \spectuple{S}\\
+    &P: LogootPos\\
+    &S \defeq \set{\tuple{p \in \mathsf{P}, v \in \mathsf{V}}_i}_{i \inbb{N}}\\
     &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty Logoot sequence}\\
     &\queries{length, getPos, generatePos}\\
     &\commands{insert, remove}\\
@@ -330,8 +333,8 @@ According to this change, LogootSplit redefines the tuples that it uses as well 
 
 \begin{specification}[LogootSplitTuple]
     \begin{align*}
-    &\forall T: \mathsf{LogootSplitTuple} \cdot \spectuple{T}\\
-    &T = \tuple{\mathbb{N}, \mathbb{I}, \mathbb{N}, \mathbb{N}}\\
+    &T: \mathsf{LogootSplitTuple} \cdot \spectuple{T}\\
+    &T \defeq \tuple{\mathbb{N}, \mathbb{I}, \mathbb{N}, \mathbb{N}}\\
     &\fnspec{constructor}{\mathbb{N} \times \mathbb{I} \times \mathbb{N} \times \mathbb{N} \to T}{Returns a LogootSplitTuple made of the given $priority$, $id_{site}$, $seq_{site}$ and $offset$}\\
     &\queries{priority, peer, seq, offset}\\
     &\commands{}\\
@@ -345,8 +348,9 @@ According to this change, LogootSplit redefines the tuples that it uses as well 
 
 \begin{specification}[LogootSplitPos]
     \begin{align*}
-    &\forall T: \mathsf{LogootSplitTuple} \ \forall P: \mathsf{LogootSplitPos} \cdot \spectuple{P}\\
-    &P = \mathlist{t}{T}\\
+    &P: \mathsf{LogootSplitPos} \cdot \spectuple{P}\\
+    &T: \mathsf{LogootSplitTuple}\\
+    &P \defeq \mathlist{t}{T}\\
     &\fnspec{constructor}{\mathlist{t}{T} \to P}{Returns a LogootSplitPos made of the given tuples}\\
     &\queries{length, get, lastTuple, peer, seq, offset, uid}\\
     &\commands{fromBase, concat, truncate}\\
@@ -386,8 +390,9 @@ To ensure that the positions comply with \autoref{prop:timeless-unicity}, Logoot
 
 \begin{specification}[LogootSplitBlock]
     \begin{align*}
-    &\forall P: \mathsf{LogootSplitPos} \ \forall B: \mathsf{LogootSplitBlock} \cdot \spectuple{B}\\
-    &B = \tuple{\set{p \in P}, \set{n \inbb{N} \ssep offset(p) \leq n}}\\
+    &B: \mathsf{LogootSplitBlock} \cdot \spectuple{B}\\
+    &P: \mathsf{LogootSplitPos}\\
+    &B \defeq \tuple{\set{p \in P}, \set{n \inbb{N} \ssep offset(p) \leq n}}\\
     &\fnspec{constructor}{P \times \mathbb{N} \to I}{Returns a LogootSplitBlock...}\\
     &\queries{length, posBegin, posEnd, begin, end, peer, seq, uid}\\
     &\commands{}\\
@@ -398,7 +403,7 @@ To ensure that the positions comply with \autoref{prop:timeless-unicity}, Logoot
     &\fnspec{end}{B \to \mathbb{N}}{Returns the offset of posEnd}\\
     &\fnspec{peer}{B \to \mathbb{I}}{Returns the peer of the positions of the given block}\\
     &\fnspec{seq}{B \to \mathbb{N}}{Returns the sequence number of the positions of the given block}\\
-    &\fnspec{uid}{I \to \tuple{\mathbb{I}, \mathbb{N}}}{Returns the unique id of the given block}
+    &\fnspec{uid}{B \to \tuple{\mathbb{I}, \mathbb{N}}}{Returns the unique id of the given block}
     \end{align*}
     \label{spec:logootsplit-block}
 \end{specification}
@@ -414,8 +419,10 @@ LogootSplit proposes a new specification of the replicated sequence illustrated 
 
 \begin{specification}[LogootSplitSeq]
     \begin{align*}
-    &\forall P: LogootSplitPos \ \forall B: LogootSplitBlock \ \forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSplitSeq} \tuple{V} \cdot \spectuple{S}\\
-    &S = \set{\tuple{b: \mathsf{B}, \set{v_j: \mathsf{V}}_{j \inbb {N}}}_i}_{i \inbb{N}}\\
+    &\forall V: \mathsf{Value} \ \forall S: \mathsf{LogootSplitSeq} \tuple{V} \cdot \spectuple{S}\\
+    &P: LogootSplitPos\\
+    &B: LogootSplitBlock\\
+    &S \defeq \set{\tuple{b \in \mathsf{B}, \set{v_j \in \mathsf{V}}_{j \inbb {N}}}_i}_{i \inbb{N}}\\
     &\fnspec{constructor}{\left( \right) \to S}{Generates and returns an empty LogootSplit sequence}\\
     &\queries{length, getBlocks, generatePos}\\
     &\commands{insert, remove}\\
