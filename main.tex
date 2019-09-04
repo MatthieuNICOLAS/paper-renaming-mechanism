@@ -488,41 +488,51 @@ Nodes use an anti-entropy mechanism to synchronise in a pairwise manner, by dete
 
 \subsection{Specification}
 
-\begin{itemize}
-    \item Introduce a new operation $rename$.
-    \item This operation allows nodes to map each $position$ of their current sequence to a new one.
-    \item Must be defined for all $positions$ of the current sequence of the node triggering the renaming...
-    \item ... but also for all $positions$ which can be added concurrently by other nodes.
-    \item The $rename$ operation must preserve the safety properties of the system, which are:
-    \begin{itemize}
-        \item The resulting sequences must be valid
-        \item The nodes must converge
+We introduce a new operation, the \emph{rename} one.
+Nodes use this operation to define and share a common context between them.
+Each node use this context to map positions of their current sequence to new ones.
+This mapping is perform using a new function introduced : $renamePos$.
+
+However, the mapping must be done while preserving the safety properties of the system.
+These properties are the following:
+
+\begin{property}(Well-formed Sequence)
+    The sequence must be well-formed.
+    We define a sequence as well-formed if it meets the following conditions:
+    \begin{itemize}[noitemsep]
+        \item[~]
+        \begin{subproperty}(Unicity Preservation)
+            Each position must be unique.
+            Thus, for a given \emph{rename} operation, each position should be mapped to a distinct new position.
+        \end{subproperty}
+        \item[~]
+        \begin{subproperty}(Order Preservation)
+            The sequence must be sorted with regards to the positions.
+            Therefore, the existing order between initial positions must be preserved by the mapping.
+        \end{subproperty}
     \end{itemize}
-    \item We define a sequence valid if
-    \begin{itemize}
-        \item Each position is unique. Thus a $rename$ operation should not associate several positions to the same resulting one. To put it in a more formal way, the $rename$ operation must be designed such as:
+\end{property}
 
-        \begin{center}
-            $\forall p1, p2 \in Pos \land p1 \neq p2 \cdot rename(p1) \neq rename(p2)$
-        \end{center}
-
-        \item The sequence must be sorted with regards to the positions. The existing order between initial positions must then be preserved by the $rename$ operation. It results in the following property :
-
-        \begin{center}
-            $\forall p1, p2 \in Pos \land p1 < p2 \cdot rename(p1) < rename(p2)$
-        \end{center}
-
+\begin{property}(\acf{SEC})
+    All nodes which received the same set of operations must converge without any further coordination.
+    To ensure this property, operations must be designed to comply with the following constraints:
+    \begin{itemize}[noitemsep]
+        \item[~]
+        \begin{subproperty}(Deterministic Operations)
+            Operations are applied by each node without any coordination.
+            To ensure that each node reaches eventually the same state, operations must always produce the same output.
+        \end{subproperty}
+        \item[~]
+        \begin{subproperty}(Commutative Concurrent Operations)
+            Concurrent operations may be delivered in different orders at each node.
+            In order to ensure the convergence of nodes, the order of application of a set of concurrent operations should not have any impact on the resulting state.
+        \end{subproperty}
     \end{itemize}
+\end{property}
 
-    \item To ensure the Strong Eventual Consistency of the system, the $rename$ must be:
-    \begin{itemize}
-        \item Determinist : an operation being applied without any kind of coordination by nodes, it must always produce the same output so that nodes reach the same state.
-        \item Commutative with the $insert$ and $remove$ operations : as operations can be delivered in different orders at each node, for nodes to reach the same state in a coordination-free manner, the order of application of a set of operations must not have any impact on the resulting output.
-        \begin{itemize}
-            \item However, as only one node is able to trigger the renaming mechanism, it is impossible for concurrent $rename$ operations to exist. It is thus not required to design the $rename$ operation such as it is commutative with itself in this system model.
-        \end{itemize}
-    \end{itemize}
-\end{itemize}
+
+
+
 
 For simplicity purposes, we present first RenamableLogootSplit under the assumption that no concurrent renamings can take place.
 This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
