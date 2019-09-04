@@ -530,9 +530,18 @@ These properties are the following:
     \end{itemize}
 \end{property}
 
+\subsection{Proposition}
 
+\mnnote{Dans cette section, je veux expliquer le comportement du mécanisme de renommage via un exemple d'exécution où un noeud renomme la séquence répliquée tandis qu'un autre la modifie en concurrence (\autoref{fig:example-renaming}). De cette manière, les sections suivantes correspondront juste à expliquer comment on a conçu et implémenté la solution proposée}
 
+\begin{figure}
+    \centering
+    \includegraphics[width=0.75\textwidth]{img/example-renaming.png}
+    \caption{Concurrent \emph{rename} and \emph{insert} operations}
+    \label{fig:example-renaming}
+\end{figure}
 
+\mnnote{TODO: Reprendre \autoref{fig:example-renaming} et unifier son formalisme et style avec le reste des figures.}
 
 For simplicity purposes, we present first RenamableLogootSplit under the assumption that no concurrent renamings can take place.
 This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
