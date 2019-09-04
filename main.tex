@@ -30,23 +30,16 @@
 % ------
 \usepackage{amsthm} %\newcounter{<name>}[<counter-name>]{<displayed-name>}
 
-\newcounter{definition-counter}
 \theoremstyle{definition}
-\newtheorem{definition}[definition-counter]{Definition}
+\newtheorem{definition}{Definition}
+\newtheorem{note}{Note}
+\newtheorem{property}{Property}
+\newtheorem{subproperty}{Property}[property]
+\newtheorem{specification}{Specification}
 
-\newcounter{note-counter}
-\theoremstyle{definition}
-\newtheorem{note}[note-counter]{Note}
-
-\newcounter{propertycounter}
-\theoremstyle{definition}
-\newtheorem{property}[propertycounter]{Property}
-\def\propertycounterautorefname{Property}
-
-\newcounter{specificationcounter}
-\theoremstyle{definition}
-\newtheorem{specification}[specificationcounter]{Specification}
-\def\specificationcounterautorefname{Specification}
+\def\propertyautorefname{Property}
+\def\subpropertyautorefname{Subproperty}
+\def\specificationautorefname{Specification}
 
 \usepackage{graphicx}
 \usepackage{color}
