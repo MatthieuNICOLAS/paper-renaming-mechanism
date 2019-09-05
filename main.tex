@@ -532,7 +532,21 @@ These properties are the following:
 
 \subsection{Proposition}
 
-\mnnote{Dans cette section, je veux expliquer le comportement du mécanisme de renommage via un exemple d'exécution où un noeud renomme la séquence répliquée tandis qu'un autre la modifie en concurrence (\autoref{fig:example-renaming}). De cette manière, les sections suivantes correspondront juste à expliquer comment on a conçu et implémenté la solution proposée}
+\mnnote{TODO: Introduire l'exemple}
+
+In this example, two nodes, A and B, own a copy of the same replicated sequence.
+Initially, their respective states are equivalent.
+Node A issues a \emph{rename} operation: new positions of minimal size are reassigned to each value of the sequence.
+These new positions are picked in such a way that make it possible to aggregate all values into one block.
+Concurrently, node B inserts a new value into the sequence.
+To this end, the node computes and attaches a position to the value.
+Both operations are then broadcasted.
+
+Upon reception of the \emph{insert} operation, node A does not apply it as it is.
+Indeed, as positions of other values have been modified, inserting the new value at its given position would result in an inconsistency: the breach of the intended order.
+Therefore, it is necessary to rename this position and thus to transform the operation before applying it.
+Once a fitting new position has been computed, the value can be safely inserted into the sequence.
+When node B received the \emph{rename} operation, it applies the renaming on each position of its current sequence to obtain the new state.
 
 \begin{figure}
     \centering
@@ -542,7 +556,7 @@ These properties are the following:
 \end{figure}
 
 \mnnote{TODO: Reprendre \autoref{fig:example-renaming} et unifier son formalisme et style avec le reste des figures.}
-
+In the next sections, we describe how we designed and implemented such renaming mechanism.
 For simplicity purposes, we present first RenamableLogootSplit under the assumption that no concurrent renamings can take place.
 This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
 We then present the complete version of RenamableLogootSplit, with the additional components required to deal with concurrent renamings.
