@@ -531,6 +531,7 @@ These properties are the following:
 \end{property}
 
 \subsection{Proposition}
+\label{sec:proposition}
 
 \mnnote{TODO: Introduire l'exemple}
 
@@ -561,7 +562,42 @@ For simplicity purposes, we present first RenamableLogootSplit under the assumpt
 This allows us to illustrate the process of renaming the sequence and how to design it to be commutative with \emph{insert} and \emph{remove} operations.
 We then present the complete version of RenamableLogootSplit, with the additional components required to deal with concurrent renamings.
 
-\section{Renaming in a centralised setting}
+\section{Renaming without any concurrent \emph{rename} operation}
+
+\subsection{\emph{Epoch-based} mechanism}
+
+A renaming can be seen as a change of frame of reference, applied to positions.
+Positions come from different frames according to if \emph{rename} operations occurred between their generation.
+As illustrated in \autoref{sec:proposition}, comparing positions from different frames and taking decision on this result would lead to inconsistencies.
+It is thus necessary to define the frame of reference in which a given position is valid and to add information to the system to model it.
+
+To this end, we introduce the notion of \emph{epochs}.
+The sequence is first assigned a default epoch : the \emph{origin} one.
+When a node issues a \emph{rename} operation, it updates the current epoch of its sequence with a newly generated one.
+To generate the new epoch, the node uses its $id_{site}$ and $seq_{site}$.
+As the default epoch \emph{origin} does not belong to any actual node, we define and use a specific $id_{site}$ noted as $\bot_{\mathbb{I}}$ for this case.
+
+We thus specify epochs as follow:
+
+\begin{specification}[Epoch]
+    \begin{align*}
+    &E: \mathsf{Epoch} \cdot \spectuple{E}\\
+    &E \defeq \set{origin, \tuple{n, \mathbb{I}} \ssep n \in \mathbb{N^*}}\\
+    &origin = \tuple{0, \bot_{\mathbb{I}}}\\
+    &\fnspec{constructor}{\mathbb{I} \times \mathbb{N} \to E}{Returns an Epoch made of the given $id_{site}$ and $seq_{site}$}\\
+    &\queries{peer, seq, epochId}\\
+    &\commands{}\\
+    &\fnspec{peer}{E \to \mathbb{I}}{???}\\
+    &\fnspec{seq}{E \to \mathbb{N}}{???}\\
+    &\fnspec{epochId}{E \to \tuple{\mathbb{I}, \mathbb{N}}}{???}\\
+    \end{align*}
+    \label{spec:epoch}
+\end{specification}
+
+We tag operations with the current epoch at their time of generation to encapsulate their scope of validity.
+Upon reception of an operation, nodes first compare the current epoch of their sequence to the epoch embedded in the operation.
+If the two epochs match, the operation can be applied at it is.
+Otherwise, nodes need to transform the operation beforehand.
 
 \subsection{Proposition}
 
@@ -656,40 +692,6 @@ We then present the complete version of RenamableLogootSplit, with the additiona
     \\
     Retravailler cette partie en conséquence ?
 }
-
-\subsubsection{\emph{Epoch-based} mechanism}
-
-\begin{itemize}
-    \item A renaming can be seen as a change of frame of reference, applied to positions
-    \item Positions come from different frames according to if a renaming occurred between their generation
-    \item We should not compare positions from different frames as it is meaningless
-    \item It is thus necessary
-    \begin{itemize}
-        \item to define the frame of reference in which a given position is valid
-        \item add information to the system to model this frame
-    \end{itemize}
-    \item To achieve this, we introduce the notion of \emph{epochs}
-    \item The sequence has a default epoch : the \emph{origin} one
-    \item When a renaming is performed, a new epoch is generated and replaces the current epoch of the sequence
-    \item The set of these epochs forms a chain in the case of the centralised setting
-    \item The renamingMaps presented previously allow nodes to move their sequence from one epoch to the next one
-    \item By tagging operations with the current epoch at the time of generation, we can encapsulate its scope of validity
-    \item Upon reception of an operation, a node is able to determine by comparing its current epoch to the epoch embedded in the operation if it can be applied or if additional steps are required beforehand
-    \item To represent epochs, we use the following data structure:
-
-    \begin{center}
-        $\tuple{\tuple{epochNumber, id_{site}}, parentId}$
-    \end{center}
-
-    where:
-
-    \begin{itemize}
-        \item $epochNumber$ is the successor of the $epochNumber$ of the previous epoch
-        \item $id_{site}$ is the identifier of the node which generated the epoch
-        \item $\tuple{epochNumber, id_{site}}$ form the identifier of the epoch
-        \item $parentId$ refers to the previous epoch by its identifier
-    \end{itemize}
-\end{itemize}
 
 \subsubsection{Rename positions}
 \label{sec:renameForwardPos}
