@@ -589,7 +589,7 @@ We thus specify epochs as follow:
     &\commands{}\\
     &\fnspec{peer}{E \to \mathbb{I}}{???}\\
     &\fnspec{seq}{E \to \mathbb{N}}{???}\\
-    &\fnspec{epochId}{E \to \tuple{\mathbb{I}, \mathbb{N}}}{???}\\
+    &\fnspec{epochId}{E \to \tuple{\mathbb{I}, \mathbb{N}}}{???}
     \end{align*}
     \label{spec:epoch}
 \end{specification}
@@ -599,99 +599,49 @@ Upon reception of an operation, nodes first compare the current epoch of their s
 If the two epochs match, the operation can be applied at it is.
 Otherwise, nodes need to transform the operation beforehand.
 
+\subsection{Generating \emph{rename} operations}
+
+In order to ensure \ac{SEC}, nodes have to apply each operation in a coordination-free manner.
+In our case, nodes have to rename any position the same way without coordinating.
+However, nodes may observe operations in different orders.
+They may not share the same state when applying the \emph{rename} operation.
+Then we can not rely on their respective state to take any decision on how to rename a position.
+We thus design the \emph{rename} operation to provide and set a common context between nodes.
+This common context will be used to rename positions in a deterministic fashion without requiring further communications.
+
+We thus specify \emph{rename} operations as follow:
+
+\begin{specification}[Rename Operation]
+    \begin{align*}
+    &R: \mathsf{RenameOp} \cdot \spectuple{R}\\
+    &R \defeq \tuple{E, \mathbb{I}, \mathbb{N}, \mathlist{b}{B}}\\
+    &\fnspec{constructor}{E \times \mathbb{I} \times \mathbb{N} \times \mathlist{b}{B} \to R}{Returns a \emph{rename} operation made of the given $epoch$, $id_{site}$, $seq_{site}$ and $renamedBlocks$}\\
+    &\queries{epoch, peer, seq, renamedBlocks}\\
+    &\commands{}\\
+    &\fnspec{epoch}{R \to E}{???}\\
+    &\fnspec{peer}{R \to \mathbb{I}}{???}\\
+    &\fnspec{seq}{R \to \mathbb{N}}{???}\\
+    &\fnspec{renamedBlocks}{R \to \mathlist{b}{B}}{???}
+    \end{align*}
+    \label{spec:rename}
+\end{specification}
+
+However, the metadata overhead per block is not bounded, as blocks rely on positions which are themselves not bounded.
+Moreover, the number of blocks grows as the collaboration progresses until a \emph{rename} operation is applied.
+Broadcasting \emph{rename} operations may then prove to be expensive.
+
+To adress this issue, we present a mechanism to compress the \emph{rename} operation in \autoref{sec:optimisation-rename-op}.
+This mechanism allows to reduce to a fixed amount the metadata per block at the price of additional computations.
+Furthermore, we configure nodes to issue a \emph{rename} operation once the number of blocks in the sequence reaches a given treshold.
+This effectively limits the number of blocks that \emph{renamedBlocks} may contain.
+
+Combining these two actions thus allow us to bound the size of \emph{rename} operations.
+
 \subsection{Proposition}
 
 \begin{itemize}
     \item Decompose the $rename$ operation into the following components and steps
 \end{itemize}
-
-\subsubsection{renamingMap}
-
-\begin{itemize}
-    \item The first step is to generate the $renamingMap$.
-    \item This map is computed by the node which triggers the $rename$ operation
-    \item It associates each existing position of its current sequence to a new one
-    \item It will be used by every nodes to apply the renaming on their state
-    \item \mnnote{TODO: Montrer qu'en se basant sur la renamingMap pour effectuer le renommage, on se découple de l'état courant du noeud au moment où il l'applique. Les noeuds prennent donc leurs décisions sur les mêmes entrées, ce qui garantit les mêmes résultats.}
-    \item As it needs to be broadcast to other nodes, the size of the $renamingMap$ impacts the efficiency of the proposed solution
-    \item A mechanism to compress the $renamingMap$ is introduced in section \ref{sec:optimisation-renamingMap}
-    \item To compute this map, the node uses the algorithm \ref{alg:generateRenamingMap}
-
-    \begin{algorithm}
-        \caption{Generate renamingMap}
-        \label{alg:generateRenamingMap}
-        \begin{algorithmic}
-        \Function{generateRenamingMap}{$S, id', seq'$}
-            \State $renamingMap \gets Map()$
-            \State
-            \State $firstPos \gets S.getFirstPos()$
-            \State $firstTuple \gets firstPos.getFirstTuple()$
-            \State $priority \gets firstTuple.priority$
-            \Comment Retrieve the priority of the first tuple of the first position
-            \State
-            \ForAll{$(pos, index) \in S$}
-                \State $pos' \gets new \ Pos(\tuple{priority, id', seq', index})$
-                \Comment Generate the new corresponding position
-                \State $renamingMap.set(pos, pos')$
-            \EndFor
-            \State
-            \State \Return $renamingMap$
-        \EndFunction
-        \end{algorithmic}
-    \end{algorithm}
-
-    \item This algorithm has the following behavior:
-    \begin{itemize}
-        \item Consist in generating a $Map$ associating each position of the sequence $S$ to a new position
-        \item To optimise the resulting sequence, the new positions should be aggregable into one block
-        \item i.e. the new positions must form a $position \ interval$
-        \item First, have to pick a position as the beginning of the interval
-        \item This choice is arbitrary
-        \item In our case, pick the following position $pos'$:
-
-        \begin{center}
-            $pos' = \tuple{priority, id', seq', 0}$
-        \end{center}
-
-        where:
-
-        \begin{itemize}
-            \item $priority$ is the same value as the $priority$ of the first tuple of the first element of the sequence. We explain this choice in section \ref{sec:renameForwardPos}.
-            \item $id'$ is the $id_{site}$ of the node performing the $rename$ operation
-            \item $seq'$ is the current $seq_{site}$ of the node performing the $rename$ operation
-        \end{itemize}
-
-        \item The first position $pos$ of the current sequence will be map to $pos'$
-        \item Then, all former positions are mapped to the consecutive ones of the new position according to the existing order
-        \item All positions of the current sequence will be mapped to a set of positions which effectively form the following position interval $posInterval'$:
-
-        \begin{center}
-            $posInterval' = \tuple{pos', length - 1}$
-        \end{center}
-
-        where:
-
-        \begin{itemize}
-            \item $length$ is the length of the sequence
-        \end{itemize}
-    \end{itemize}
-
-    \item \mnnote{TODO: Ajouter une phrase expliquant qu'on perd de l'information avec le renommage. Par exemple, on remplace le $id_{site}$ contenu dans la position qui identifie l'auteur de cet élément par $id'$ qui est l'identifiant de l'auteur du renommage}
-
-\end{itemize}
-
-\mnnote{NOTE: Le mappage des anciennes positions aux nouvelles se fait de manière séquentielle et ne dépend pas en finalité de la valeur de la position initiale.
-    \\
-    On peut tout à fait remplacer la $renamingMap$ par:
-        \\
-        - la liste des positions renommées
-        \\
-        - et une fonction qui calcule la nouvelle position à partir de l'index de la position renommée, de $priority$ de la 1ère position renommée, de $id$ du noeud qui a déclenché le renommage et sa valeur de $seq$ à ce moment là.
-    \\
-    Ceci permet de limiter les métadonnées conservées qu'à l'ancien état, et non plus l'ancien état + $n$ nouvelles positions de longueur 1 (1 nouvelle position pour chaque position renommée).
-    \\
-    Retravailler cette partie en conséquence ?
-}
 
 \subsubsection{Rename positions}
 \label{sec:renameForwardPos}
@@ -885,7 +835,7 @@ Otherwise, nodes need to transform the operation beforehand.
 
 \subsection{Compressing the renaming operation}
 
-\label{sec:optimisation-renamingMap}
+\label{sec:optimisation-rename-op}
 
 \mnnote{TODO: Retravailler pour y ajouter la notion d'offset. Par contre, faire remarquer qu'on a pas besoin de l'offset pour identifier de manière unique "la base" d'une position (toute la position sauf l'offset)}
 
