@@ -637,37 +637,6 @@ This effectively limits the number of blocks that \emph{renamedBlocks} may conta
 
 Combining these two actions thus allow us to bound the size of \emph{rename} operations.
 
-% \subsection{???}
-
-% Ajout de l'EpochStore
-% - Structure arborescente
-%   - Permet de maintenir la liste des epochs
-%   - Et pour chaque epoch, la liste des renamedBlocks
-% - Permet de récupérer les informations à utiliser pour transformer une opération
-%    - Une ou plusieurs transformations à appliquer
-%    - Nécessité de chemin entre epochs
-
-% We have to keep track of epochs and their corresponding \emph{renamedBlocks}.
-% Indeed, nodes may receive concurrent operations to \emph{rename} operations.
-% They need to store this data to transform these operations.
-% Moreover, some of these operations can be concurrent to several \emph{rename} operations.
-% We thus have to be able to compute the list of epochs separating two others.
-
-% To this end, we add a new data structure to the replicated sequence, the \emph{Epoch Store}.
-% This arborescent data structure stores a node for each \emph{rename} operation.
-% Nodes are identified by the epoch they correspond to and store the corresponding \emph{renamedBlocks}.
-
-% \subsection{Applying \emph{rename} operations}
-
-% Upon the delivery of a \emph{rename} operation, nodes follow these steps to process it.
-
-% First, nodes compute the new epoch based on the $id_{site}$ and $seq_{site}$ embedded in the \emph{rename} operation.
-% Then, nodes store
-
-% To this end, we add a new data structure to the replicated sequence, the the \emph{Epoch Store}.
-% Nodes register into the \emph{Epoch Store} each epoch and the corresponding \emph{renamedBlocks}.
-% The newly inserted epoch is linked to the previous epoch by a parent-child relationship.
-
 \subsection{Renaming positions}
 \label{sec:renameForwardPos}
 
@@ -795,6 +764,24 @@ As all remaining positions are either smaller than $predecessorOfNewFirstPos$ or
 % \end{itemize}
 
 \subsection{Applying \emph{rename} operation}
+
+Upon the delivery of \emph{rename} operations, nodes execute the following steps to apply them.
+
+First, they retrieve the newly generated epoch using the $id_{site}$ and $seq_{site}$ embedded in the operation.
+They update the current epoch of their state.
+Their future operations will then be tagged using this new epoch onward.
+
+Second, using the \emph{renamedBlocks} contained in the operation and the function $renameForwardPos$, nodes rename each position of their current state.
+Resulting positions are then aggregated into blocks and a new sequence is built from them, replacing the previous one.
+
+However, nodes may still received operations from previous epochs.
+Some of these operations may even be concurrent to several \emph{rename} operations.
+To apply these operations, nodes will have to transform them beforehand.
+Nodes thus need to store the \emph{renamedBlocks} and have to be able to compute the list of epochs separating two others.
+
+To this end, we add a new data structure to the replicated sequence: the \emph{Epoch Store}.
+Nodes register into the \emph{Epoch Store} each epoch and the corresponding \emph{renamedBlocks}.
+Newly inserted epochs are linked to the previous epoch by a parent-child relationship.
 
 \subsection{Applying concurrent \emph{insert} and \emph{remove} operations}
 
