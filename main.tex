@@ -693,13 +693,17 @@ According to the value of $pos$, we apply different strategies to generate its i
 We define $firstPos$ the first position of the first block of $renamedBlocks$ and $lastPos$ the last position of the last block.
 We call $newFirstPos$ and $newLastPos$ their respective image regarding $renameForwardPos$.
 
-The first strategy is applied to positions which are included in the interval $]firstPos, maxLastPos[$ where $maxLastPos$ corresponds to the greatest position between $lastPos$ and $newLastPos$.
+The first strategy is applied to positions which are included in the interval $]firstPos, lastPos[$.
 In that case, we first search $predecessor$, the predecessor of $pos$ in $renamedBlocks$, using the function $findPredecessor$.
 Then, we retrieve the index of $predecessor$ thanks to $findIndex$.
 Using its index, we can compute the new position corresponding to $predecessor$: $newPredecessor$.
 Finally, we generate $newPos$ by concatenating $pos$ to $newPredecessor$.
 
-The second case is for positions such as we have $newFirstPos < pos < firstPos$.
+The second case is for positions such as we have $lastPos < pos < newLastPos$.
+To preserve the intended order between positions, we have to generate $newPos$ such as $newLastPos < newPos$.
+We achieve it by concatenating $pos$ to $newLastPos$ to obtain $newPos$.
+
+The third case is for positions such as we have $newFirstPos < pos < firstPos$.
 In that scenario, we have to generate $newPos$ such as $newPos < newFirstPos$.
 To this end, we pick the predecessor of $newFirstPos$, $predecessorOfNewFirstPos$, by decreasing its offset by one.
 We then generate $newPos$ by concatenating $pos$ to $predecessorOfNewFirstPos$.
@@ -732,37 +736,15 @@ As all remaining positions are either smaller than $predecessorOfNewFirstPos$ or
             \State \Return $new \ P(newPriority, newId, newSeq, index)$
         \EndIf\\
 
-        % \State $minFirstPos \gets min(firstPos, newFirstPos)$
-        \State $maxLastPos \gets max(lastPos, newLastPos)$\\
-
-        %%%%%%% VERSION 1 %%%%%%%%%
-        % \If{$pos < minFirstPos$ \textbf{or} $maxLastPos < pos$}
-        %     \State \Return $pos$
-        %     \Comment Return the position unchanged as it does not interfere with the renaming
-        % \EndIf
-        % \State
-
-        % % \If{$lastPos < pos < newLastPos$}
-        % %     \State \Return $concat(newLastPos, pos)$
-        % % \EndIf
-        % % \State
-
-        % \If{$newFirstPos < pos < firstPos$}
-        %     \State $predecessorOfNewFirstPos \gets new \ P(newPriority, newId, newSeq, -1)$
-        %     \State \Return $concat(predecessorOfNewFirstPos, pos)$
-        % \EndIf
-        % \State
-
-        % \State $indexOfPredecessorOfPos \gets findIndexOfPredecessor(pos, renamedBlocks)$
-        % \State $newPredecessorOfPos \gets new \ P(newPriority, newId, newSeq, indexOfPredecessorOfPos)$
-        % \State \Return $concat(newPredecessorOfPos, pos)$
-
-        %%%%%%% VERSION 2 %%%%%%%%%
-        \If{$firstPos < pos$ \textbf{and} $pos < maxLastPos$}
+        \If{$firstPos < pos$ \textbf{and} $pos < lastPos$}
             \State $predecessor \gets findPredecessor(pos, renamedBlocks)$
             \State $indexOfPredecessor \gets findIndex(predecessor, renamedBlocks)$
             \State $newPredecessor \gets new \ P(newPriority, newId, newSeq, indexOfPredecessor)$
             \State \Return $concat(newPredecessor, pos)$
+        \EndIf\\
+
+        \If{$lastPos < pos$ \textbf{and} $pos < newLastPos$}
+            \State \Return $concat(newLastPos, pos)$
         \EndIf\\
 
         \If{$newFirstPos < pos$ \textbf{and} $pos < firstPos$}
@@ -778,7 +760,7 @@ As all remaining positions are either smaller than $predecessorOfNewFirstPos$ or
 
 \begin{figure}
     \centering
-    \includegraphics[width=0.85\textwidth]{img/filler-example-renameforwardpos.JPG}
+    \includegraphics[width=\textwidth]{img/filler-example-renameforwardpos.JPG}
     \caption{TODO: À refaire sur papier, là on voit rien...}
     \label{fig:example-renameforwardpos}
 \end{figure}
