@@ -765,7 +765,7 @@ As all remaining positions are either smaller than $predecessorOfNewFirstPos$ or
 
 \subsection{Applying \emph{rename} operation}
 
-Upon the delivery of \emph{rename} operations, nodes execute the following steps to apply them.
+Upon the delivery of a \emph{rename} operations, nodes execute the following steps to apply it.
 
 First, they retrieve the newly generated epoch using the $id_{site}$ and $seq_{site}$ embedded in the operation.
 They update the current epoch of their state.
@@ -775,7 +775,7 @@ Second, using the \emph{renamedBlocks} contained in the operation and the functi
 Resulting positions are then aggregated into blocks and a new sequence is built from them, replacing the previous one.
 
 However, nodes may still received operations from previous epochs.
-Some of these operations may even be concurrent to several \emph{rename} operations.
+Some of these operations may even be outdated by several \emph{rename} operations.
 To apply these operations, nodes will have to transform them beforehand.
 Nodes thus need to store the \emph{renamedBlocks} and have to be able to compute the list of epochs separating two others.
 
@@ -783,7 +783,16 @@ To this end, we add a new data structure to the replicated sequence: the \emph{E
 Nodes register into the \emph{Epoch Store} each epoch and the corresponding \emph{renamedBlocks}.
 Newly inserted epochs are linked to the previous epoch by a parent-child relationship.
 
-\subsection{Applying concurrent \emph{insert} and \emph{remove} operations}
+\subsection{Applying \emph{insert} and \emph{remove} operations}
+
+Upon the reception of a \emph{insert} or \emph{remove} operation, nodes first compare their current epoch to the operation's one.
+If the two epochs are equals, then nodes can apply the operation as it is.
+Otherwise, it means that one or several \emph{rename} operations were applied locally since this operation has been issued.
+Nodes have to transform the operation before applying it to preserve its semantic.
+
+In that case, nodes retrieve the list of these renamings using the \emph{Epoch Store}, the current epoch and the operation's one.
+They rename successively the positions of the operation to build the corresponding positions in the new epoch.
+Using them, nodes build the new operation and apply it to their state.
 
 % \subsection{Putting it all together}
 
