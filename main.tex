@@ -361,7 +361,7 @@ According to this change, LogootSplit redefines the tuples that it uses as well 
     \label{spec:logootsplit-pos}
 \end{specification}
 
-Based on its specification of positions, LogootSplit defines the aggregability of positions as follow:
+Based on its specification of positions, LogootSplit defines the aggregability of positions as follows:
 
 \begin{definition}[Base of a Position]
     The base of a position corresponds to the position deprived of the offset of its last tuple.
@@ -578,7 +578,7 @@ Upon the delivery of a \emph{rename} operation, nodes update the current epoch o
 We generate this new epoch using $id_{site}$ and $seq_{site}$ of the node which issued the operation to make it unique.
 We will then have to embed this data into the \emph{rename} operation.
 
-Thus, we specify epochs as follow:
+Thus, we specify epochs as follows:
 
 \begin{specification}[Epoch]
     \begin{align*}
@@ -600,6 +600,18 @@ Upon reception of an operation, nodes first compare the current epoch of their s
 If the two epochs match, the operation can be applied at it is.
 Otherwise, nodes need to transform the operation beforehand.
 
+As operations are now tied to the concept of epochs, we have to update the existing constraints on their order of delivery.
+Delivering operations originating from an epoch unknown to a node would cause issues, as the node would have no clue on how to deal with them.
+Thus, we define the new consistency model used by the message-passing layer as follows:
+
+\begin{specification}("Epoch-based + Causal Remove" Consistency Model)
+    The message-passing layer delivers operations according to the following constraints:
+    \begin{enumerate}
+        \item Operations are delivered causally to \emph{rename} operations which introduced their respective epochs.
+        \item {remove} operations are delivered after corresponding \emph{insert} operations.
+    \end{enumerate}
+\end{specification}
+
 \subsection{Generating \emph{rename} operations}
 
 In order to ensure \ac{SEC}, nodes have to apply each operation in a coordination-free manner.
@@ -610,7 +622,7 @@ Then we can not rely on their respective state to take any decision on how to re
 We thus design the \emph{rename} operation to provide and set a common context between nodes.
 This common context will be used to rename positions in a deterministic fashion without requiring further communications.
 
-We thus specify \emph{rename} operations as follow:
+We thus specify \emph{rename} operations as follows:
 
 \begin{specification}[Rename Operation]
     \begin{align*}
@@ -643,7 +655,7 @@ Combining these two actions thus allow us to bound the size of \emph{rename} ope
 
 Thanks to the data embedded in the \emph{rename} operations, nodes are now able to rename positions in a convergent way.
 To this end, we define the new function $renameForwardPos$, which rename a given position $pos$ into a new position based on the provided $renamedBlocks$.
-Its behavior, which is detailed in algorithm \ref{alg:renameForwardPos}, can be described as follow.
+Its behavior, which is detailed in algorithm \ref{alg:renameForwardPos}, can be described as follows.
 
 This algorithm distinguishes two cases: if the given position $pos$ is part of the known positions when the \emph{rename} operation was issued, or not.
 In the first case, we map the position to one of the position of the resulting block.
