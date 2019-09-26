@@ -795,6 +795,26 @@ Nodes thus need to store the \emph{renamedBlocks} and have to be able to compute
 To this end, we add a new data structure to the replicated sequence: the \emph{Epoch Store}.
 Nodes register into the \emph{Epoch Store} each epoch and the corresponding \emph{renamedBlocks}.
 Newly inserted epochs are linked to the previous epoch by a parent-child relationship.
+% We use this relationship to define the order relationship between epochs.
+% We define an epoch as greater than its ancestors.
+
+\begin{specification}[Epoch Store]
+    \begin{align*}
+    &ES: \mathsf{EpochStore} \cdot \spectuple{ES}\\
+    &ES \defeq \set{\tuple{E, E, \mathlist{b}{B}}}\\
+    &\fnspec{constructor}{() \to ES}{Returns an empty Epoch Store}\\
+    &\queries{epoch, parentEpoch, renamedBlocks, getPathForwardBetweenEpochs}\\
+    &\commands{add}\\
+    &\fnspec{epoch}{ES \times \tuple{\mathbb{I}, \mathbb{N}} \to E}{TODO}\\
+    &\fnspec{parentEpoch}{ES \times E \to E}{TODO}\\
+    &\fnspec{renamedBlocks}{ES \times E \to \mathlist{b}{B}}{TODO}\\
+    % &\fnspec{compareEpochs}{ES \times E \times E \to \{ <, >, = \}}{TODO}
+    &\fnspec{getPathForwardBetweenEpochs}{ES \times E \times E \to \mathlist{e}{E}}{TODO}\\
+    %&\fnspec{getPathForwardBetweenEpochs}{ES \times \{ e_1 \in E \} \times \{ e_2 \in E \ssep e_1 < e_2 \} \to \mathlist{e}{E}}{TODO}\\
+    &\fnspec{add}{ES \times \tuple{E, E, \mathlist{b}{B}} \to ES}{TODO}
+    \end{align*}
+    \label{spec:epoch-store}
+\end{specification}
 
 \subsection{Applying \emph{insert} and \emph{remove} operations}
 
