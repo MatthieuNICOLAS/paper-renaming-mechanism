@@ -573,11 +573,12 @@ It is thus necessary to define the frame of reference in which a given position 
 
 To this end, we introduce the notion of \emph{epochs}.
 The sequence is first assigned a default epoch : the \emph{origin} one.
-When a node issues a \emph{rename} operation, it updates the current epoch of its sequence with a newly generated one.
-To generate the new epoch, the node uses its $id_{site}$ and $seq_{site}$.
-As the default epoch \emph{origin} does not belong to any actual node, we define and use a specific $id_{site}$ noted as $\bot_{\mathbb{I}}$ for this case.
+As the default epoch \emph{origin} does not belong to any actual node, we define and use a specific $id_{site}$ noted as $\bot_{\mathbb{I}}$ for this particular case.
+Upon the delivery of a \emph{rename} operation, nodes update the current epoch of their sequence with a newly generated one.
+We generate this new epoch using $id_{site}$ and $seq_{site}$ of the node which issued the operation to make it unique.
+We will then have to embed this data into the \emph{rename} operation.
 
-We thus specify epochs as follow:
+Thus, we specify epochs as follow:
 
 \begin{specification}[Epoch]
     \begin{align*}
@@ -587,9 +588,9 @@ We thus specify epochs as follow:
     &\fnspec{constructor}{\mathbb{I} \times \mathbb{N} \to E}{Returns an Epoch made of the given $id_{site}$ and $seq_{site}$}\\
     &\queries{peer, seq, epochId}\\
     &\commands{}\\
-    &\fnspec{peer}{E \to \mathbb{I}}{???}\\
-    &\fnspec{seq}{E \to \mathbb{N}}{???}\\
-    &\fnspec{epochId}{E \to \tuple{\mathbb{I}, \mathbb{N}}}{???}
+    &\fnspec{peer}{E \to \mathbb{I}}{TODO}\\
+    &\fnspec{seq}{E \to \mathbb{N}}{TODO}\\
+    &\fnspec{epochId}{E \to \tuple{\mathbb{I}, \mathbb{N}}}{TODO}
     \end{align*}
     \label{spec:epoch}
 \end{specification}
@@ -618,10 +619,10 @@ We thus specify \emph{rename} operations as follow:
     &\fnspec{constructor}{E \times \mathbb{I} \times \mathbb{N} \times \mathlist{b}{B} \to R}{Returns a \emph{rename} operation made of the given $epoch$, $id_{site}$, $seq_{site}$ and $renamedBlocks$}\\
     &\queries{epoch, peer, seq, renamedBlocks}\\
     &\commands{}\\
-    &\fnspec{epoch}{R \to E}{???}\\
-    &\fnspec{peer}{R \to \mathbb{I}}{???}\\
-    &\fnspec{seq}{R \to \mathbb{N}}{???}\\
-    &\fnspec{renamedBlocks}{R \to \mathlist{b}{B}}{???}
+    &\fnspec{epoch}{R \to E}{TODO}\\
+    &\fnspec{peer}{R \to \mathbb{I}}{TODO}\\
+    &\fnspec{seq}{R \to \mathbb{N}}{TODO}\\
+    &\fnspec{renamedBlocks}{R \to \mathlist{b}{B}}{TODO}
     \end{align*}
     \label{spec:rename}
 \end{specification}
@@ -786,9 +787,9 @@ Newly inserted epochs are linked to the previous epoch by a parent-child relatio
 \subsection{Applying \emph{insert} and \emph{remove} operations}
 
 Upon the reception of a \emph{insert} or \emph{remove} operation, nodes first compare their current epoch to the operation's one.
-If the two epochs are equals, then nodes can apply the operation as it is.
+If the two epochs match, then nodes can apply the operation as it is.
 Otherwise, it means that one or several \emph{rename} operations were applied locally since this operation has been issued.
-Nodes have to transform the operation before applying it to preserve its semantic.
+Nodes have to transform the operation beforehand to preserve its semantic.
 
 In that case, nodes retrieve the list of these renamings using the \emph{Epoch Store}, the current epoch and the operation's one.
 They rename successively the positions of the operation to build the corresponding positions in the new epoch.
