@@ -716,26 +716,19 @@ As all remaining positions are either smaller than $predecessorOfNewFirstPos$ or
         \If{$hasBeenRenamed(pos, renamedBlocks)$}
             \State $index \gets findIndex(pos, renamedBlocks)$
             \State \Return $new \ P(newPriority, newId, newSeq, index)$
-        \EndIf\\
-
-        \If{$firstPos < pos$ \textbf{and} $pos < lastPos$}
+        \ElsIf{$firstPos < pos$ \textbf{and} $pos < lastPos$}
             \State $predecessor \gets findPredecessor(pos, renamedBlocks)$
             \State $indexOfPredecessor \gets findIndex(predecessor, renamedBlocks)$
             \State $newPredecessor \gets new \ P(newPriority, newId, newSeq, indexOfPredecessor)$
             \State \Return $concat(newPredecessor, pos)$
-        \EndIf\\
-
-        \If{$lastPos < pos$ \textbf{and} $pos < newLastPos$}
+        \ElsIf{$lastPos < pos$ \textbf{and} $pos < newLastPos$}
             \State \Return $concat(newLastPos, pos)$
-        \EndIf\\
-
-        \If{$newFirstPos < pos$ \textbf{and} $pos < firstPos$}
+        \ElsIf{$newFirstPos < pos$ \textbf{and} $pos < firstPos$}
             \State $predecessorOfNewFirstPos \gets new \ P(newPriority, newId, newSeq, -1)$
             \State \Return $concat(predecessorOfNewFirstPos, pos)$
-        \EndIf\\
-
-        \State \Return $pos$
-        \Comment Return the position unchanged as it does not interfere with the renaming
+        \Else
+            \State \Return $pos$ \Comment Return the position unchanged as it does not interfere with the renaming
+        \EndIf
     \EndFunction
     \end{algorithmic}
 \end{algorithm}
@@ -865,36 +858,79 @@ Using them, nodes build the new operation and apply it to their state.
     \end{itemize}
 \end{itemize}
 
-\subsection{Limits}
+\section{Evaluation}
 
-\subsubsection{Size of concurrently generated positions}
+To validate the proposed renaming mechanism, we performed an experimental evaluation to measure its performances on several aspects:
+\begin{enumerate*}
+    \item the size of the data structure
+    \item the integration time of the \emph{rename} operation
+    \item the integration time of \emph{insert} and \emph{remove} operations.
+\end{enumerate*} In cases 1 and 3, we use LogootSplit as the baseline data structure to compare results.
 
-\mnnote{TODO: Ajouter quelques lignes sur le fait que le renommage a pour effet d'augmenter la taille des positions insérées en concurrence. Tempérer ce problème en argumentant que ce nombre de positions concurrentes devrait s'avérer faible par rapport au nombre total de positions contenues dans la séquence et qu'elles seront de toute façon réduites au cours du renommage suivant.}
+Since we were not able to retrieve an existing dataset of traces of realtime editing sessions, we generated and used random traces to evaluate our data structure.
+To produce the random traces, we set up collaborative editing sessions of 10 bots.
+Every 200ms, each bot performs either an \emph{insert} or a \emph{remove} operation and broadcast it to other bots.
+The collaboration ends once each bot observes every operation.
 
-\subsubsection{Fault-tolerance}
+In our settings, each bot performs 50k operations with a ratio of 80/20\% of \emph{insert}/\emph{remove} operations.
+Bots also have 5\% of chance to move their cursor to a new position before performing an operation.
+We take snapshots of the data structure each 50k steps to follow its evolution.
 
-\begin{itemize}
-    \item The system is vulnerable to failures, as only one particular node is able to trigger renamings
-    \begin{itemize}
-        \item A failure of this node would prevent the renaming mechanism from being triggered ever again
-        \item But other nodes would still be able to continue their collaboration in such scenario
-        \item The failure of the renaming mechanism does not impede the liveness of the system
-    \end{itemize}
-    \item To address this fault-tolerance issue, can set up a consensus-based system
-    \begin{itemize}
-        \item Require nodes to perform a consensus to trigger a renaming
-        \item But consensus algorithms are expensive and not suited for dynamic systems
-        \item Can adapt the idea introduced in \cite{letia:hal-01248270}
-        \item In this paper, authors propose to divide a distributed system into two tiers:
-        the \emph{Core}, a small set of controlled and stable nodes, and the \emph{Nebula}, an uncontrolled set of nodes
-        \begin{itemize}
-            \item Only nodes from the \emph{Core} would participate in the consensus leading to a renaming
-        \end{itemize}
-        \item Provide a trade-off between the cost of performing a renaming and the resilience of the system
-    \end{itemize}
-    \item But this approach is not suited for all kind of applications
-    \item In fully distributed systems, there is no central authority to provide a set of stable nodes acting as the \emph{Core}
-\end{itemize}
+The code used to generate the traces can be found at the following address: \url{https://github.com/coast-team/mute-bot-random/}.
+This repository also contains the code corresponding to the experiments described in the next subsections as well as the results obtained.
+
+\subsection{Overhead of the data structure}
+
+% \begin{itemize}
+%     \item In our experimental settings, the overhead introduced by LogootSplit is close to linear to the number of elements of the sequence.
+%     \item Results in a document size of 105Mo after applying 500k operations.
+%     \item Can be explain by our experimental settings: as bots remove 1 character for each 4 characters inserted, it prevents them to generate long blocks which would benefit from the
+%     \item
+% \end{itemize}
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/evolution-document-size.png}
+    \caption{Evolution of the size of the document}
+    \label{fig:evolution-document-size}
+\end{figure}
+
+\subsection{Integration time of \emph{rename} operations}
+
+% CPU Reference: Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz
+
+\subsection{Integration time of \emph{insert} and \emph{remove} operations}
+
+% \subsection{Limits}
+
+% \subsubsection{Size of concurrently generated positions}
+
+% \mnnote{TODO: Ajouter quelques lignes sur le fait que le renommage a pour effet d'augmenter la taille des positions insérées en concurrence. Tempérer ce problème en argumentant que ce nombre de positions concurrentes devrait s'avérer faible par rapport au nombre total de positions contenues dans la séquence et qu'elles seront de toute façon réduites au cours du renommage suivant.}
+
+% \subsubsection{Fault-tolerance}
+
+% \begin{itemize}
+%     \item The system is vulnerable to failures, as only one particular node is able to trigger renamings
+%     \begin{itemize}
+%         \item A failure of this node would prevent the renaming mechanism from being triggered ever again
+%         \item But other nodes would still be able to continue their collaboration in such scenario
+%         \item The failure of the renaming mechanism does not impede the liveness of the system
+%     \end{itemize}
+%     \item To address this fault-tolerance issue, can set up a consensus-based system
+%     \begin{itemize}
+%         \item Require nodes to perform a consensus to trigger a renaming
+%         \item But consensus algorithms are expensive and not suited for dynamic systems
+%         \item Can adapt the idea introduced in \cite{letia:hal-01248270}
+%         \item In this paper, authors propose to divide a distributed system into two tiers:
+%         the \emph{Core}, a small set of controlled and stable nodes, and the \emph{Nebula}, an uncontrolled set of nodes
+%         \begin{itemize}
+%             \item Only nodes from the \emph{Core} would participate in the consensus leading to a renaming
+%         \end{itemize}
+%         \item Provide a trade-off between the cost of performing a renaming and the resilience of the system
+%     \end{itemize}
+%     \item But this approach is not suited for all kind of applications
+%     \item In fully distributed systems, there is no central authority to provide a set of stable nodes acting as the \emph{Core}
+% \end{itemize}
 
 \section{Renaming in a fully distributed setting}
 
@@ -975,6 +1011,10 @@ Using them, nodes build the new operation and apply it to their state.
 \subsection{Core and Nebula}
 
 \mnnote{TODO: Re-présenter Core et Nebula et expliquer qu'on peut l'utiliser dans le cadre du mécanisme de renommage pour limiter les risques de renommages concurrents}
+
+% Différences:
+% - Les noeuds d'une epoch donné sont incapables de gérer les opérations provenant d'epochs précédentes
+% - Les noeuds de la Nebula ont la responsabilité de transformer leurs opérations avant de pouvoir les envoyer au Core
 
 \section{Conclusion}
 
