@@ -867,26 +867,38 @@ To validate the proposed renaming mechanism, we performed an experimental evalua
     \item the integration time of \emph{insert} and \emph{remove} operations.
 \end{enumerate*} In cases 1 and 3, we use LogootSplit as the baseline data structure to compare results.
 
-Since we were not able to retrieve an existing dataset of traces of realtime editing sessions, we generated and used random traces to evaluate our data structure.
-To produce the random traces, we set up collaborative editing sessions of 10 bots.
-Every 200ms, each bot performs either an \emph{insert} or a \emph{remove} operation and broadcast it to other bots.
-The collaboration ends once each bot observes every operation.
+Since we were not able to retrieve an existing dataset of traces of realtime collaborative editing sessions, we generated and used random traces to evaluate our data structure.
+To produce random traces, we set up collaborative editing sessions of 10 bots.
+The bots share and edit collaboratively a document.
+According to the session, bots use either LogootSplit or RenamableLogootSplit to replicate the document.
+In both cases, each bot performs an \emph{insert} or a \emph{remove} operation locally every 200ms.
+The operation is then broadcasted to others.
+After issuing an operation, the bot can move its cursor to another position of the document.
+Additionally, in the case of RenamableLogootSplit, one bot is arbitrarily designated as the master.
+It performs \emph{rename} operations at a fixed rate.
+Each bot has to perform a given number of operations and the collaboration ends once every bot received all operations.
+Finally, to follow the evolution of the document, we take snapshots of the document at given steps of the collaboration.
 
-In our settings, each bot performs 50k operations with a ratio of 80/20\% of \emph{insert}/\emph{remove} operations.
-Bots also have 5\% of chance to move their cursor to a new position before performing an operation.
-We take snapshots of the data structure each 50k steps to follow its evolution.
+Using this method, we generated snapshots using the following settings: each bot performs 50k operations.
+For each operation, the probabilities of it being an \emph{insert} or a \emph{remove} are respectively of 80\% and 20\%.
+The chances of moving the cursor after performing an operation are of 5\%.
+\emph{rename} operations are issued by the master every 130k operations.
+Snapshots are taken every 50k operations.
 
-The code used to generate the traces can be found at the following address: \url{https://github.com/coast-team/mute-bot-random/}.
-This repository also contains the code corresponding to the experiments described in the next subsections as well as the results obtained.
+The code used to generate the traces is available at the following address: \url{https://github.com/coast-team/mute-bot-random/}.
+This repository also contains the code corresponding to the experiments described in the next subsections as well as the results computed.
 
 \subsection{Overhead of the data structure}
 
-% \begin{itemize}
-%     \item In our experimental settings, the overhead introduced by LogootSplit is close to linear to the number of elements of the sequence.
-%     \item Results in a document size of 105Mo after applying 500k operations.
-%     \item Can be explain by our experimental settings: as bots remove 1 character for each 4 characters inserted, it prevents them to generate long blocks which would benefit from the
-%     \item
-% \end{itemize}
+Using the snapshots generated, we compare the evolution of the size of the data structure in collaborative editing session.
+The results are displayed in \autoref{fig:evolution-document-size}.
+On this plot, the dark blue line corresponds to the size of the whole LogootSplit data structure, content and metadata, while the gray one corresponds to the size of only its content.
+The yellow line represents the evolution of the size of the RenamableLogootSplit data structure, without garbage collecting states from previous epoches while the light blue one shows the same data with the garbage collection enabled.
+
+The main result we observe is that RenamableLogootSplit, with garbage collection, allows us to bound the size of its data structure.
+In this example, as the document's size is reset by successive \emph{rename} operations, it never exceeds 20 Mo.
+Whereas the LogootSplit document's size grows continuously and eventually reaches 100 Mo.
+
 
 \begin{figure}
     \centering
