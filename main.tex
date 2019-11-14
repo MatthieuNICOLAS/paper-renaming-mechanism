@@ -892,13 +892,28 @@ This repository also contains the code corresponding to the experiments describe
 
 Using the snapshots generated, we compare the evolution of the size of the data structure in collaborative editing session.
 The results are displayed in \autoref{fig:evolution-document-size}.
-On this plot, the dark blue line corresponds to the size of the whole LogootSplit data structure, content and metadata, while the gray one corresponds to the size of only its content.
-The yellow line represents the evolution of the size of the RenamableLogootSplit data structure, without garbage collecting states from previous epoches while the light blue one shows the same data with the garbage collection enabled.
+On this plot, the red line corresponds to the size of the whole LogootSplit data structure, content and metadata, while the blue one corresponds to the size of only its content.
+The yellow line represents the evolution of the size of the RenamableLogootSplit data structure, without garbage collecting states from previous epoches while the green one shows the same data with the garbage collection enabled.
 
 The main result we observe is that RenamableLogootSplit, with garbage collection, allows us to bound the size of its data structure.
 In this example, as the document's size is reset by successive \emph{rename} operations, it never exceeds 20 Mo.
 Whereas the LogootSplit document's size grows continuously and eventually reaches 100 Mo.
 
+The second interesting result is that RenemableLogootSplit performed better memory-wise than LogootSplit, even without garbage collection.
+This result appears at unintuitive, as the \emph{rename} process consists in starting a new equivalent sequence while keeping the former one's state to deal with concurrent updates.
+However, this can be explained by implementation details.
+We presented the state of LogootSplit document as a sequence of blocks and the corresponding content.
+But in pratice, some additional metadata are incorporated to the state to browse the sequence more efficiently when performing updates.
+When a \emph{rename} operation is applied, we only keep the sequence of blocks from the former state to be able to transform concurrent operations.
+Other metadata is scrapped, which results in this memory gain even without garbage collecting the rest of the former state.
+
+\mnnote{TODO: Expliquer pourquoi la taille du document LogootSplit évolue de façon quasi-linéaire (paramètres des bots qui empêche la création de longs blocs, ce qui limite leur bénéfice)}
+
+% LogootSplit's overhead close to linear to the number of elements
+% Results of our experiments' settings
+% Since \emph{remove} operations prevent further append to a block, bots tend to generate block of 3 characters
+% Moreover, subsequent moves result split in even further smaller blocks
+% These settings prevent us from capitalizing on LogootSplit's features to minimize the overhead
 
 \begin{figure}
     \centering
