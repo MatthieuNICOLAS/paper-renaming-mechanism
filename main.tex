@@ -68,6 +68,8 @@
 \acrodef{CRDT}[CRDT]{Conflict-free Replicated Data Type}
 \acrodefplural{CRDT}[CRDTs]{Conflict-free Replicated Data Types}
 
+\acrodef{P2P}[P2P]{Peer-to-Peer}
+
 \acrodef{SEC}[SEC]{Strong Eventual Consistency}
 
 % Meta-Data
@@ -875,26 +877,32 @@ To validate the proposed renaming mechanism, we performed an experimental evalua
     \item the integration time of \emph{insert} and \emph{remove} operations.
 \end{enumerate*} In cases 1 and 3, we use LogootSplit as the baseline data structure to compare results.
 
-Since we were not able to retrieve an existing dataset of traces of realtime collaborative editing sessions, we generated and used random traces to evaluate our data structure.
-To produce random traces, we set up collaborative editing sessions of 10 bots.
-The bots share and edit collaboratively a document.
-According to the session, bots use either LogootSplit or RenamableLogootSplit to replicate the document.
-In both cases, each bot performs an \emph{insert} or a \emph{remove} operation locally every 200ms.
-The operation is then broadcasted to others.
-After issuing an operation, the bot can move its cursor to another position of the document.
-Additionally, in the case of RenamableLogootSplit, one bot is arbitrarily designated as the master.
-It performs \emph{rename} operations at a fixed rate.
+Since we were not able to retrieve an existing dataset of traces of realtime collaborative editing sessions, we ran simulations to generate traces to evaluate our data structure.
+The simulations depict the following scenario: several authors collaborate in order to write an article.
+Initially, they prioritize adding content as everything remains to be done.
+Thus they mainly insert elements into the document during this first phase.
+A few \emph{remove} operations are still issued to simulate spelling mistakes.
+Once the document approaches the critical length, the collaborators switch to the second phase.
+From this point, they stop adding new content and focus on revamping existing parts instead.
+This is simulated by balancing the ratio between \emph{insert} and \emph{remove} operations.
 Each bot has to perform a given number of operations and the collaboration ends once every bot received all operations.
-Finally, to follow the evolution of the document, we take snapshots of the document at given steps of the collaboration.
+We take snapshots of the document at given steps of the collaboration to follow the evolution of the document.
 
-Using this method, we generated snapshots using the following settings: each bot performs 50k operations.
-For each operation, the probabilities of it being an \emph{insert} or a \emph{remove} are respectively of 80\% and 20\%.
-The chances of moving the cursor after performing an operation are of 5\%.
-\emph{rename} operations are issued by the master every 130k operations.
-Snapshots are taken every 50k operations.
+We ran these simulations with the following experimental settings : we deployed 10 bots as separate Docker containers on a single workstation.
+Each container corresponds to a single mono-threaded Node.js process (version 13.1.0) simulating an author.
+The bots share and edit collaboratively the document using either LogootSplit or RenamableLogootSplit according to the session.
+In both cases, each bot performs an \emph{insert} or a \emph{remove} operation locally every 200 $\pm$ 50ms.
+During the first phase, the probabilities for each operation of being an \emph{insert} or a \emph{remove} are respectively of 80\% and 20\%.
+Once the document reaches 60k characters (around 15 pages), the probabilities are both set to 50\%.
+The generated operation is then broadcast to others using a \ac{P2P} full mesh network.
+After issuing an operation, there are 5\% of chances that the bot moves its cursor to another position in the document.
+Each bot performs 15k operations.
+Snapshots are taken every 10k operations.
+Additionally, in the case of RenamableLogootSplit, one bot is arbitrarily designated as the master.
+It performs \emph{rename} operations every 30k operations.
 
-The code used to generate the traces is available at the following address: \url{https://github.com/coast-team/mute-bot-random/}.
-This repository also contains the code corresponding to the experiments described in the next subsections as well as the results computed.
+The code of the simulations is available at the following address: \url{https://github.com/coast-team/mute-bot-random/}.
+This repository also contains the code corresponding to the benchmarks described in the next subsections as well as the results computed.
 
 \subsection{Overhead of the data structure}
 
