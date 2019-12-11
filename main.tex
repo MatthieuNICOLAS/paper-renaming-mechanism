@@ -37,6 +37,7 @@
 \newtheorem{subproperty}{Property}[property]
 \newtheorem{specification}{Specification}
 
+\def\algorithmautorefname{Algorithm}
 \def\propertyautorefname{Property}
 \def\subpropertyautorefname{Subproperty}
 \def\specificationautorefname{Specification}
@@ -905,6 +906,11 @@ It performs \emph{rename} operations every 30k operations.
 
 The code of the simulations is available at the following address: \url{https://github.com/coast-team/mute-bot-random/}.
 This repository also contains the code corresponding to the benchmarks described in the next subsections as well as the results computed.
+
+Meanwhile, our implementation of LogootSplit and RenamableLogootSplit are available at \url{https://github.com/coast-team/mute-structs}.
+Both implementations use an AVL Tree, a self-balancing binary search tree, to represent the state of the sequence.
+This data structure enables us to achieve \emph{insert} and \emph{remove} operations in logarithmic time.
+Additionally, while we described \verb|renameForwarPos()| in \autoref{alg:renameForwardPos} as a function to rename one Position only, the corresponding function in our implementation enables to rename an entire Block to improve performances.
 
 \subsection{Overhead of the data structure}
 
