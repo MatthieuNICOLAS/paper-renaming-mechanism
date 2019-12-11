@@ -940,7 +940,31 @@ Other metadata is scrapped, which results in this memory gain even without garba
 
 \subsection{Integration time of \emph{rename} operations}
 
-% CPU Reference: Intel(R) Xeon(R) CPU E5-2640 v4 @ 2.40GHz
+We set up benchmarks to evaluate the performances of the renaming mechanism.
+We ran the benchmarks on a workstation equipped of a Intel Xeon CPU E5-1620 (10MB Cache, 3.50 GHz) with 16GB of RAM running Fedora 31.
+The benchmark consists in a single mono-threaded Node.js (version 13.3.0) process measuring the integration times of \emph{rename} operations on snapshots of different sizes.
+Times were obtained using \verb|process.hrtime.bigint()|.
+We do not take into account the first hundreds measures to avoid abnormalities due to the \ac{JIT} compilation process.
+The results are presented in \autoref{fig:evolution-integration-time-rename}.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{img/integration-time-rename-0.pdf}
+    \caption{Evolution of the integration time of rename operations}
+    \label{fig:evolution-integration-time-rename}
+\end{figure}
+
+The obtained results correspond to the theoritical ones.
+The time of integration of local \emph{rename} operations grows linearly, as they browse the whole sequence to compute the \emph{renamedIdIntervals}.
+The time of integration of remote ones follows a supra-linear progression, since they rename each block of the current sequence using \verb|renameForwardPos()|, whose complexity is logarithmic.
+
+An interesting feature of the \emph{rename} operation is that it aggregates renamed elements into one new block, effectively resetting the number of blocks composing the sequence.
+This allows to speeds up the next \emph{rename} operation, as its complexity depends on the number of blocks.
+We can then effectively limit the integration time of \emph{rename} operations by using the number of blocks to decide when to issue \emph{rename} operations.
+This allows the introduction of the proposed mechanism in real-time collaborative applications to improve the memory-wise performances without degrading the user experience eventually.
+
+Furthermore, it is important to highlight that, while the current evaluated implementation is mono-threaded, it is possible to parallelise some computations in the case of the remote \emph{rename} operation.
+The process of renaming each block using \verb|renameForwardPos()| can be parallelised, as it is a pure function.
 
 \subsection{Integration time of \emph{insert} and \emph{remove} operations}
 
